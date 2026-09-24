@@ -1,0 +1,18 @@
+{
+  "name": "खर्च-किताब | Nepali Daily Expense Tracker",
+  "short_name": "खर्च-किताब",
+  "description": "सजिलो र भरपर्दो दैनिक खर्च व्यवस्थापन र कापीको पानामा हिसाब",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAF9",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

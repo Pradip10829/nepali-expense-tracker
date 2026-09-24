@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded App Icon Tile -->
+  <rect width="512" height="512" rx="120" fill="url(#grad)" />
+  
+  <!-- Outer Wallet Body -->
+  <rect x="76" y="130" width="360" height="252" rx="36" fill="#FFFFFF" opacity="0.95" />
+  
+  <!-- Wallet Flap -->
+  <path d="M 76 190 Q 76 130 136 130 L 376 130 Q 436 130 436 190 L 436 210 L 76 210 Z" fill="#E6F4EA" />
+  
+  <!-- Wallet Card Pocket Lock -->
+  <rect x="330" y="226" width="106" height="60" rx="18" fill="#059669" />
+  <circle cx="360" cy="256" r="10" fill="#FFFFFF" />
+  
+  <!-- Nepali Rupee Symbol 'रु' in Center -->
+  <text x="210" y="295" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="900" font-size="140" fill="#047857" text-anchor="middle">रु</text>
+  
+  <!-- Small sparkling financial star -->
+  <path d="M 400 90 L 410 115 L 435 125 L 410 135 L 400 160 L 390 135 L 365 125 L 390 115 Z" fill="#34D399" />
+</svg>
