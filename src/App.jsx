@@ -324,7 +324,6 @@ export default function App() {
           setActiveTab('home');
         }}
         expenses={expenses}
-        setExpenses={setExpenses}
         totalMoney={totalMoney}
         dailyBudget={dailyBudget}
         lang={lang}

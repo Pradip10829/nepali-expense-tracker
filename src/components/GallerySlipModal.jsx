@@ -1,14 +1,14 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, FileSpreadsheet, Check, Receipt, Calendar, Clock, Filter, Banknote, QrCode, Sparkles } from 'lucide-react';
+import { X, Download, FileSpreadsheet, Check, Receipt, Calendar, Clock, Filter, Banknote, QrCode } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { exportToExcel } from '../utils/excelExporter';
-import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, generate100SampleExpenses } from '../data/nepaliData';
+import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency } from '../data/nepaliData';
 
-export default function GallerySlipModal({ isOpen, onClose, expenses, setExpenses, totalMoney, dailyBudget = 1000, lang }) {
+export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney, dailyBudget = 1000, lang }) {
   const receiptRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState('');
-  const [filterLimit, setFilterLimit] = useState('100'); // '100', 'all', 'today', '50', '25'
+  const [filterLimit, setFilterLimit] = useState('all'); // 'all', 'today'
 
   if (!isOpen) return null;
 
@@ -23,17 +23,10 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
   const approxMonthIndex = (date.getMonth() + 9) % 12;
   const nepaliDateStr = `वि.सं. ${bsYear} ${monthsNe[approxMonthIndex]} ${date.getDate()}, ${daysNe[date.getDay()]}`;
 
-  // Filter expenses according to selected limit
-  let displayedExpenses = [...expenses];
-  if (filterLimit === 'today') {
-    displayedExpenses = displayedExpenses.filter(e => e.date === todayStr);
-  } else if (filterLimit === '25') {
-    displayedExpenses = displayedExpenses.slice(0, 25);
-  } else if (filterLimit === '50') {
-    displayedExpenses = displayedExpenses.slice(0, 50);
-  } else if (filterLimit === '100') {
-    displayedExpenses = displayedExpenses.slice(0, 100);
-  }
+  // Show strictly what the user added
+  const displayedExpenses = filterLimit === 'today'
+    ? expenses.filter(e => e.date === todayStr)
+    : [...expenses];
 
   const totalSpent = displayedExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
   const remaining = totalMoney - totalSpent;
@@ -81,7 +74,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
       const fullWidth = cardEl.scrollWidth || cardEl.offsetWidth;
       const fullHeight = cardEl.scrollHeight || cardEl.offsetHeight;
 
-      // Dynamically adjust pixelRatio so 100 items (3000-4000px tall) don't exceed browser canvas limits
+      // Dynamically adjust pixelRatio to ensure full capture up to 100 items without mobile canvas limits
       let dynamicPixelRatio = 2.0;
       if (fullHeight > 3500) {
         dynamicPixelRatio = 1.15;
@@ -136,7 +129,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
       setTimeout(() => setSavedSuccess(''), 4000);
     } catch (err) {
       console.error('Failed to save image:', err);
-      alert(lang === 'ne' ? 'फोटो सेभ गर्दा समस्या आयो। धेरै कारोबार भए Excel मा पनि डाउनलोड गर्न सक्नुहुन्छ।' : 'Failed to save image. Try Excel export for very large lists.');
+      alert(lang === 'ne' ? 'फोटो सेभ गर्दा समस्या आयो।' : 'Failed to save image.');
     } finally {
       setIsSaving(false);
     }
@@ -164,10 +157,10 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
             </div>
             <div className="min-w-0">
               <h3 className="text-xs sm:text-base font-extrabold text-slate-900 leading-tight truncate">
-                {lang === 'ne' ? 'खर्च रसिद (१०० कारोबार डाउनलोड)' : 'Expense Statement (100 Items)'}
+                {lang === 'ne' ? 'खर्च रसिद (ग्यालरी डाउनलोड)' : 'Expense Statement Receipt'}
               </h3>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
-                {lang === 'ne' ? '१०० वटासम्म कारोबार ग्यालरीमा सेभ गर्न सकिन्छ' : 'Download up to 100 transactions to gallery'}
+                {lang === 'ne' ? `${displayedExpenses.length} वटा कारोबार देखाउँदै` : `Showing ${displayedExpenses.length} transactions`}
               </p>
             </div>
           </div>
@@ -176,7 +169,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
             {/* Excel button */}
             <button
               onClick={handleExcelExport}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition cursor-pointer"
               title="Excel फाइल"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
@@ -186,14 +179,14 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
             {/* Close */}
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Quick Limit & Filter Selector (100 items, All, Today, 50, 25) */}
+        {/* Filter Selector (All or Today only) */}
         <div className="bg-slate-100/90 border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0">
           <div className="flex items-center gap-1.5 shrink-0 text-slate-600">
             <Filter className="w-3 h-3 text-emerald-700 shrink-0" />
@@ -203,26 +196,28 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            {[
-              { id: '100', label: lang === 'ne' ? '१०० वटा' : '100 Items' },
-              { id: 'all', label: lang === 'ne' ? 'सबै' : 'All' },
-              { id: 'today', label: lang === 'ne' ? 'आजको' : 'Today' },
-              { id: '50', label: lang === 'ne' ? '५० वटा' : '50 Items' },
-              { id: '25', label: lang === 'ne' ? '२५ वटा' : '25 Items' },
-            ].map(btn => (
-              <button
-                key={btn.id}
-                type="button"
-                onClick={() => setFilterLimit(btn.id)}
-                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                  filterLimit === btn.id
-                    ? 'bg-emerald-600 text-white shadow-2xs'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {btn.label}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setFilterLimit('all')}
+              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                filterLimit === 'all'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {lang === 'ne' ? `सबै (${expenses.length})` : `All (${expenses.length})`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterLimit('today')}
+              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                filterLimit === 'today'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {lang === 'ne' ? 'आजको मात्र' : 'Today'}
+            </button>
           </div>
         </div>
 
@@ -237,37 +232,6 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
         {/* Scrollable Preview Area (Optimized for Mobile Screens) */}
         <div className="p-2 sm:p-4 overflow-y-auto overflow-x-hidden bg-slate-100/70 grow flex flex-col items-center">
           
-          {/* Quick Helper: Load 100 Sample Items for immediate test if user currently has fewer items */}
-          {expenses.length < 100 && setExpenses && (
-            <div className="w-full max-w-[360px] sm:max-w-md bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-3 flex items-center justify-between gap-2">
-              <div className="text-[11px] text-emerald-900 min-w-0">
-                <span className="font-bold block truncate">
-                  {lang === 'ne'
-                    ? `हाल ${expenses.length} वटा कारोबार दर्ता छ।`
-                    : `You have ${expenses.length} transactions.`}
-                </span>
-                <span className="text-[10px] text-emerald-700 block truncate">
-                  {lang === 'ne'
-                    ? '१०० वटाको रसिद परीक्षण गर्न नमुना डाटा लोड गर्नुहोस्:'
-                    : 'Load 100 sample items to test full download:'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const samples = generate100SampleExpenses();
-                  setExpenses(samples);
-                  setFilterLimit('100');
-                  alert(lang === 'ne' ? '१०० वटा कारोबार सफलतापूर्वक लोड भयो!' : '100 transactions loaded!');
-                }}
-                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] rounded-lg shrink-0 shadow-xs flex items-center gap-1 transition cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{lang === 'ne' ? '१०० लोड गर्नुहोस्' : 'Load 100'}</span>
-              </button>
-            </div>
-          )}
-
           {/* THE DIGITAL SLIP CARD (Target for PNG download to gallery) */}
           <div
             ref={receiptRef}
@@ -327,7 +291,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
               </div>
             </div>
 
-            {/* Itemized Transactions Table (Compact, clean 2-line ledger format for 100+ transactions) */}
+            {/* Itemized Transactions Table (Shows strictly what the user added with NO height cutoff) */}
             <div className="mb-3">
               {/* Table Column Title */}
               <div className="flex items-center justify-between text-[10px] font-extrabold uppercase text-slate-500 pb-1 border-b border-slate-200 tracking-wider">
@@ -335,7 +299,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, setExpense
                 <span>{lang === 'ne' ? 'रकम (Amount)' : 'Amount'}</span>
               </div>
 
-              {/* Transactions List (All displayed items rendered with NO max-height cutoff) */}
+              {/* Transactions List */}
               {displayedExpenses.length === 0 ? (
                 <div className="py-6 text-center text-xs text-slate-400 italic">
                   {lang === 'ne' ? 'कुनै खर्च दर्ता गरिएको छैन।' : 'No transactions recorded.'}
