@@ -132,3 +132,57 @@ export function formatNepaliCurrency(amount) {
 
 // Clean start: ZERO example/dummy expenses as requested by user
 export const INITIAL_EXPENSES = [];
+
+// Helper to generate 100 realistic Nepali transactions for testing 100-item download
+export function generate100SampleExpenses() {
+  const sampleItems = [
+    { note: 'बिहानी चिया र पाउरोटी', cat: 'snacks', pm: 'fonepay', min: 40, max: 90 },
+    { note: 'दैनिक तरकारी र आलु', cat: 'groceries', pm: 'cash', min: 100, max: 280 },
+    { note: 'बस भाडा / माइक्रो भाडा', cat: 'transport', pm: 'cash', min: 25, max: 50 },
+    { note: 'एनसेल / नमस्ते रिचार्ज', cat: 'recharge', pm: 'esewa', min: 50, max: 200 },
+    { note: 'दिउँसोको खाजा मोमो र कोक', cat: 'snacks', pm: 'fonepay', min: 150, max: 320 },
+    { note: 'बाइक पेट्रोल पम्प', cat: 'transport', pm: 'fonepay', min: 250, max: 600 },
+    { note: 'डेरी दुध र दही', cat: 'groceries', pm: 'cash', min: 65, max: 160 },
+    { note: 'औषधि पसल (सिटामोल / भिटामिन)', cat: 'medical', pm: 'fonepay', min: 80, max: 400 },
+    { note: 'किराना सामान (दाल, चामल, तेल)', cat: 'groceries', pm: 'fonepay', min: 350, max: 1200 },
+    { note: 'साथीसँग कफी', cat: 'snacks', pm: 'fonepay', min: 120, max: 260 },
+    { note: 'अतिरिक्त फजुल खर्च', cat: 'extra', pm: 'fonepay', min: 180, max: 650, isExtra: true },
+    { note: 'बिजुली र इन्टरनेट महशुल', cat: 'rent', pm: 'esewa', min: 600, max: 1600 },
+    { note: 'कपडा धुने सर्फ र साबुन', cat: 'shopping', pm: 'cash', min: 110, max: 260 },
+    { note: 'फलफूल (केरा, स्याउ)', cat: 'groceries', pm: 'cash', min: 130, max: 350 },
+  ];
+
+  const now = new Date();
+  const list = [];
+
+  for (let i = 0; i < 100; i++) {
+    const template = sampleItems[i % sampleItems.length];
+    // Spread dates over the last 14 days
+    const dayOffset = Math.floor(i / 8);
+    const dateObj = new Date(now.getTime() - dayOffset * 86400000);
+    const dateStr = dateObj.toISOString().split('T')[0];
+
+    // Hour and minute
+    const hour = (7 + (i % 14)); // 7 AM to 9 PM
+    const minute = (i * 9) % 60;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    const timeStr = `${String(h12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${ampm}`;
+
+    const amount = Math.floor(Math.random() * (template.max - template.min) / 10) * 10 + template.min;
+
+    list.push({
+      id: `exp-${Date.now()}-${i}`,
+      note: `${template.note} #${i + 1}`,
+      category: template.cat,
+      paymentMethod: template.pm,
+      isExtra: !!template.isExtra,
+      amount,
+      date: dateStr,
+      time: timeStr
+    });
+  }
+
+  return list;
+}
+

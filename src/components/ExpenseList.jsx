@@ -9,6 +9,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMethod, setSelectedMethod] = useState('all');
   const [onlyExtra, setOnlyExtra] = useState(false);
+  const [showAllRows, setShowAllRows] = useState(false);
 
   // Filter transactions
   const filteredExpenses = expenses.filter(item => {
@@ -130,7 +131,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
       </div>
 
       {/* Transactions List */}
-      <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+      <div className={`divide-y divide-slate-100 ${showAllRows ? 'max-h-none' : 'max-h-[600px]'} overflow-y-auto`}>
         {filteredExpenses.length === 0 ? (
           <div className="p-8 text-center">
             <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
@@ -225,6 +226,21 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
           })
         )}
       </div>
+
+      {/* Show All / Collapse Button for 100+ items */}
+      {filteredExpenses.length > 8 && (
+        <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+          <button
+            type="button"
+            onClick={() => setShowAllRows(!showAllRows)}
+            className="text-xs font-bold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl border border-emerald-200 transition cursor-pointer"
+          >
+            {showAllRows
+              ? (lang === 'ne' ? 'छोटो सूची देखाउनुहोस् (Collapse)' : 'Show Less')
+              : (lang === 'ne' ? `सबै ${filteredExpenses.length} वटा कारोबार देखाउनुहोस् (Show All ${filteredExpenses.length})` : `Show All ${filteredExpenses.length} Transactions`)}
+          </button>
+        </div>
+      )}
 
     </div>
   );

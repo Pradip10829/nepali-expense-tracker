@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, FileSpreadsheet, Check, Receipt, Calendar, Clock, Filter, Banknote, QrCode } from 'lucide-react';
+import { X, Download, FileSpreadsheet, Check, Receipt, Calendar, Clock, Filter, Banknote, QrCode, Sparkles } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { exportToExcel } from '../utils/excelExporter';
-import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency } from '../data/nepaliData';
+import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, generate100SampleExpenses } from '../data/nepaliData';
 
-export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney, dailyBudget = 1000, lang }) {
+export default function GallerySlipModal({ isOpen, onClose, expenses, setExpenses, totalMoney, dailyBudget = 1000, lang }) {
   const receiptRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState('');
@@ -78,22 +78,31 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
 
     try {
       const cardEl = receiptRef.current;
-      const height = cardEl.scrollHeight || cardEl.offsetHeight;
+      const fullWidth = cardEl.scrollWidth || cardEl.offsetWidth;
+      const fullHeight = cardEl.scrollHeight || cardEl.offsetHeight;
 
-      // Dynamically adjust pixelRatio to prevent exceeding mobile canvas limits (4096px / 8192px)
+      // Dynamically adjust pixelRatio so 100 items (3000-4000px tall) don't exceed browser canvas limits
       let dynamicPixelRatio = 2.0;
-      if (height > 3500) {
-        dynamicPixelRatio = 1.2;
-      } else if (height > 2000) {
-        dynamicPixelRatio = 1.5;
-      } else if (height > 1000) {
-        dynamicPixelRatio = 1.8;
+      if (fullHeight > 3500) {
+        dynamicPixelRatio = 1.15;
+      } else if (fullHeight > 2000) {
+        dynamicPixelRatio = 1.45;
+      } else if (fullHeight > 1000) {
+        dynamicPixelRatio = 1.75;
       }
 
       const dataUrl = await toPng(cardEl, {
         quality: 0.95,
         pixelRatio: dynamicPixelRatio,
         backgroundColor: '#ffffff',
+        width: fullWidth,
+        height: fullHeight,
+        style: {
+          height: `${fullHeight}px`,
+          maxHeight: 'none',
+          overflow: 'visible',
+          transform: 'none',
+        }
       });
 
       // Check if mobile device supports native sharing / save to Photos
@@ -155,7 +164,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
             </div>
             <div className="min-w-0">
               <h3 className="text-xs sm:text-base font-extrabold text-slate-900 leading-tight truncate">
-                {lang === 'ne' ? 'खर्च रसिद (ग्यालरी डाउनलोड)' : 'Expense Statement Receipt'}
+                {lang === 'ne' ? 'खर्च रसिद (१०० कारोबार डाउनलोड)' : 'Expense Statement (100 Items)'}
               </h3>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
                 {lang === 'ne' ? '१०० वटासम्म कारोबार ग्यालरीमा सेभ गर्न सकिन्छ' : 'Download up to 100 transactions to gallery'}
@@ -226,8 +235,39 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
         )}
 
         {/* Scrollable Preview Area (Optimized for Mobile Screens) */}
-        <div className="p-2 sm:p-4 overflow-y-auto overflow-x-hidden bg-slate-100/70 grow flex justify-center">
+        <div className="p-2 sm:p-4 overflow-y-auto overflow-x-hidden bg-slate-100/70 grow flex flex-col items-center">
           
+          {/* Quick Helper: Load 100 Sample Items for immediate test if user currently has fewer items */}
+          {expenses.length < 100 && setExpenses && (
+            <div className="w-full max-w-[360px] sm:max-w-md bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-3 flex items-center justify-between gap-2">
+              <div className="text-[11px] text-emerald-900 min-w-0">
+                <span className="font-bold block truncate">
+                  {lang === 'ne'
+                    ? `हाल ${expenses.length} वटा कारोबार दर्ता छ।`
+                    : `You have ${expenses.length} transactions.`}
+                </span>
+                <span className="text-[10px] text-emerald-700 block truncate">
+                  {lang === 'ne'
+                    ? '१०० वटाको रसिद परीक्षण गर्न नमुना डाटा लोड गर्नुहोस्:'
+                    : 'Load 100 sample items to test full download:'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const samples = generate100SampleExpenses();
+                  setExpenses(samples);
+                  setFilterLimit('100');
+                  alert(lang === 'ne' ? '१०० वटा कारोबार सफलतापूर्वक लोड भयो!' : '100 transactions loaded!');
+                }}
+                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] rounded-lg shrink-0 shadow-xs flex items-center gap-1 transition cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{lang === 'ne' ? '१०० लोड गर्नुहोस्' : 'Load 100'}</span>
+              </button>
+            </div>
+          )}
+
           {/* THE DIGITAL SLIP CARD (Target for PNG download to gallery) */}
           <div
             ref={receiptRef}
@@ -295,7 +335,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                 <span>{lang === 'ne' ? 'रकम (Amount)' : 'Amount'}</span>
               </div>
 
-              {/* Transactions List */}
+              {/* Transactions List (All displayed items rendered with NO max-height cutoff) */}
               {displayedExpenses.length === 0 ? (
                 <div className="py-6 text-center text-xs text-slate-400 italic">
                   {lang === 'ne' ? 'कुनै खर्च दर्ता गरिएको छैन।' : 'No transactions recorded.'}
@@ -317,7 +357,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                         {/* Top Line: S.N. + Note + Amount */}
                         <div className="flex items-center justify-between gap-1.5">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-mono text-[10px] font-bold text-slate-400 w-5 shrink-0">
+                            <span className="font-mono text-[10px] font-bold text-slate-400 w-6 shrink-0">
                               #{idx + 1}
                             </span>
                             <span className="font-bold text-slate-900 truncate text-[11px] sm:text-xs">
@@ -336,7 +376,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                         </div>
 
                         {/* Bottom Line: Date & Time • Category • Mode */}
-                        <div className="flex items-center gap-1.5 text-[9.5px] sm:text-[10px] text-slate-500 mt-0.5 pl-6.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 text-[9.5px] sm:text-[10px] text-slate-500 mt-0.5 pl-7 flex-wrap">
                           <span className="font-mono text-slate-600 font-medium">
                             {item.date} {item.time ? `• ${item.time}` : ''}
                           </span>
