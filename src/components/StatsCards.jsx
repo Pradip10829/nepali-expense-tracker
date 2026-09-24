@@ -86,20 +86,20 @@ export default function StatsCards({ expenses, totalMoney, dailyBudget = 1000, o
       {/* Top Banner Cards: Total Funds & Remaining Balance */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         
-        {/* Total Funds Card (Clean Visible White) */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 text-slate-800 border border-slate-200/90 shadow-xs relative overflow-hidden flex flex-col justify-between">
+        {/* Total Funds Card */}
+        <div className="bg-gradient-to-br from-emerald-700 to-teal-800 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-emerald-800/20 relative overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/60 shrink-0">
+              <div className="p-1.5 sm:p-2 rounded-xl bg-white/10 backdrop-blur-xs text-emerald-200 shrink-0">
                 <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 truncate">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-100 truncate">
                 {t.totalMoney}
               </span>
             </div>
             <button
               onClick={onOpenSetFunds}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer shrink-0"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 bg-white/20 hover:bg-white/30 active:scale-95 text-white rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer backdrop-blur-xs shrink-0"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span className="hidden xs:inline sm:inline">{lang === 'ne' ? 'रकम तोक्नुहोस्' : 'Set Funds'}</span>
@@ -108,17 +108,17 @@ export default function StatsCards({ expenses, totalMoney, dailyBudget = 1000, o
           </div>
 
           <div className="my-2.5 sm:my-3">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight break-words font-['Mukta',sans-serif]">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight break-words font-['Mukta',sans-serif]">
               {formatNepaliCurrency(totalMoney)}
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-emerald-100/80 mt-0.5">
               {lang === 'ne' ? 'तपाईंको कुल उपलब्ध बजेट वा आम्दानी' : 'Total available budget or salary'}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs text-slate-600">
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] sm:text-xs text-emerald-100">
             <span>{lang === 'ne' ? 'कुल खर्च भएको:' : 'Total Spent:'}</span>
-            <span className="font-bold text-slate-900">{formatNepaliCurrency(totalAllExpenses)}</span>
+            <span className="font-bold">{formatNepaliCurrency(totalAllExpenses)}</span>
           </div>
         </div>
 
