@@ -103,24 +103,26 @@ export default function BudgetBar({ expenses, dailyBudget, setDailyBudget, lang 
       </div>
 
       {/* Helper feedback text with exact extra amount */}
-      <div className="flex items-center justify-between text-[11px] font-medium pt-0.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-medium pt-0.5">
         <span className={isOver ? 'text-rose-600 font-bold flex items-center gap-1' : 'text-slate-500'}>
           {isOver && <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
-          {isOver
-            ? (lang === 'ne' 
-                ? `आजको खर्च ${formatNepaliCurrency(todayTotal)} भयो` 
-                : `Today's spend is ${formatNepaliCurrency(todayTotal)}`)
-            : `${percentage}% ${t.budgetUsed} ${formatNepaliCurrency(dailyBudget)}`}
+          <span>
+            {isOver
+              ? (lang === 'ne' 
+                  ? `आजको खर्च ${formatNepaliCurrency(todayTotal)} भयो` 
+                  : `Today's spend is ${formatNepaliCurrency(todayTotal)}`)
+              : `${percentage}% ${t.budgetUsed} ${formatNepaliCurrency(dailyBudget)}`}
+          </span>
         </span>
         
         {isOver ? (
-          <span className="text-rose-700 font-extrabold bg-rose-100 px-2 py-0.5 rounded-full">
+          <span className="text-rose-700 font-extrabold bg-rose-100 px-2 py-0.5 rounded-full self-start sm:self-auto text-[10px] sm:text-[11px]">
             {lang === 'ne' 
               ? `अतिरिक्त खर्च: +${formatNepaliCurrency(extraAmount)}` 
               : `Extra expense: +${formatNepaliCurrency(extraAmount)}`}
           </span>
         ) : (
-          <span className="text-emerald-700 font-semibold">
+          <span className="text-emerald-700 font-semibold self-start sm:self-auto text-[10px] sm:text-[11px]">
             {formatNepaliCurrency(dailyBudget - todayTotal)} {lang === 'ne' ? 'बाँकी' : 'remaining'}
           </span>
         )}

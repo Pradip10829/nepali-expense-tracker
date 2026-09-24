@@ -77,9 +77,9 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 overflow-x-auto pb-1">
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mr-1">
-            <Filter className="w-3 h-3" />
+        <div className="flex items-center gap-1.5 pt-1 overflow-x-auto pb-1.5 scroll-smooth no-scrollbar text-xs">
+          <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mr-1 shrink-0">
+            <Filter className="w-3 h-3 shrink-0" />
             {t.filterBy}:
           </span>
 
@@ -88,7 +88,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
               setSelectedCategory('all');
               setOnlyExtra(false);
             }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer ${
               selectedCategory === 'all' && !onlyExtra
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -100,7 +100,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
           {/* Filter for Extra Expenses */}
           <button
             onClick={() => setOnlyExtra(!onlyExtra)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0 cursor-pointer ${
               onlyExtra
                 ? 'bg-rose-600 text-white shadow-xs'
                 : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
@@ -117,7 +117,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
                 setSelectedCategory(cat.id === selectedCategory ? 'all' : cat.id);
                 setOnlyExtra(false);
               }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1 shrink-0 cursor-pointer ${
                 selectedCategory === cat.id && !onlyExtra
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -216,7 +216,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
                       }
                     }}
                     title="हटाउनुहोस् / Delete"
-                    className="p-1.5 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer opacity-70 group-hover:opacity-100"
+                    className="p-2 sm:p-1.5 rounded-lg text-slate-400 sm:text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-90 transition cursor-pointer opacity-100 sm:opacity-70 sm:group-hover:opacity-100"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

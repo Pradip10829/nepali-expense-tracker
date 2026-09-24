@@ -87,83 +87,84 @@ export default function StatsCards({ expenses, totalMoney, dailyBudget = 1000, o
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         
         {/* Total Funds Card */}
-        <div className="bg-gradient-to-br from-emerald-700 to-teal-800 rounded-2xl p-5 text-white shadow-lg shadow-emerald-800/20 relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-white/10 backdrop-blur-xs text-emerald-200">
-                <Wallet className="w-5 h-5" />
+        <div className="bg-gradient-to-br from-emerald-700 to-teal-800 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-emerald-800/20 relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="p-1.5 sm:p-2 rounded-xl bg-white/10 backdrop-blur-xs text-emerald-200 shrink-0">
+                <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-100 truncate">
                 {t.totalMoney}
               </span>
             </div>
             <button
               onClick={onOpenSetFunds}
-              className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer backdrop-blur-xs"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 bg-white/20 hover:bg-white/30 active:scale-95 text-white rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer backdrop-blur-xs shrink-0"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>{lang === 'ne' ? 'रकम तोक्नुहोस् / थप्नुहोस्' : 'Set / Add Funds'}</span>
+              <span className="hidden xs:inline sm:inline">{lang === 'ne' ? 'रकम तोक्नुहोस्' : 'Set Funds'}</span>
+              <span className="xs:hidden sm:hidden">{lang === 'ne' ? '+ रकम' : '+ Funds'}</span>
             </button>
           </div>
 
-          <div className="my-3">
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <div className="my-2.5 sm:my-3">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight break-words">
               {formatNepaliCurrency(totalMoney)}
             </div>
-            <p className="text-xs text-emerald-100/80 mt-1">
+            <p className="text-[11px] sm:text-xs text-emerald-100/80 mt-0.5">
               {lang === 'ne' ? 'तपाईंको कुल उपलब्ध बजेट वा आम्दानी' : 'Total available budget or salary'}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs text-emerald-100">
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] sm:text-xs text-emerald-100">
             <span>{lang === 'ne' ? 'कुल खर्च भएको:' : 'Total Spent:'}</span>
             <span className="font-bold">{formatNepaliCurrency(totalAllExpenses)}</span>
           </div>
         </div>
 
         {/* Remaining Balance Card */}
-        <div className={`rounded-2xl p-5 border transition-all flex flex-col justify-between shadow-xs ${
+        <div className={`rounded-2xl p-4 sm:p-5 border transition-all flex flex-col justify-between shadow-xs ${
           isBalanceNegative
             ? 'bg-rose-50 border-rose-300 text-rose-950'
             : isBalanceLow
             ? 'bg-amber-50 border-amber-300 text-amber-950'
             : 'bg-white border-emerald-100 text-slate-800'
         }`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-xl ${
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className={`p-1.5 sm:p-2 rounded-xl shrink-0 ${
                 isBalanceNegative ? 'bg-rose-200 text-rose-800' : isBalanceLow ? 'bg-amber-200 text-amber-800' : 'bg-emerald-100 text-emerald-800'
               }`}>
-                <PiggyBank className="w-5 h-5" />
+                <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 truncate">
                 {t.remainingBalance}
               </span>
             </div>
             {(isBalanceNegative || isBalanceLow) && (
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+              <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
                 isBalanceNegative ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'
               }`}>
                 <AlertTriangle className="w-3 h-3" />
-                {isBalanceNegative ? (lang === 'ne' ? 'ऋणमा / सीमा नाघ्यो' : 'Deficit') : (lang === 'ne' ? 'बचत धेरै कम' : 'Low Funds')}
+                {isBalanceNegative ? (lang === 'ne' ? 'ऋणमा' : 'Deficit') : (lang === 'ne' ? 'कम बचत' : 'Low')}
               </span>
             )}
           </div>
 
-          <div className="my-3">
-            <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
+          <div className="my-2.5 sm:my-3">
+            <div className={`text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight break-words ${
               isBalanceNegative ? 'text-rose-600' : isBalanceLow ? 'text-amber-600' : 'text-emerald-700'
             }`}>
               {formatNepaliCurrency(remainingBalance)}
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
               {isBalanceNegative
                 ? (lang === 'ne' ? '⚠️ बजेटभन्दा बढी खर्च भयो!' : '⚠️ Overspent beyond total funds!')
                 : (lang === 'ne' ? 'अहिले हातमा र खातामा बाँकी रकम' : 'Safe to spend remaining funds')}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1 text-[10px] sm:text-xs text-slate-500">
             <span>{lang === 'ne' ? 'नगद vs डिजिटल खर्च:' : 'Cash vs Digital:'}</span>
             <span className="font-semibold text-slate-700">
               {formatNepaliCurrency(cashTotal)} (नगद) / {formatNepaliCurrency(digitalTotal)} (QR)

@@ -132,39 +132,39 @@ export default function App() {
       <InstallPrompt lang={lang} />
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-3.5 sm:px-6 pt-4 sm:pt-7 w-full grow">
+      <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-3 sm:pt-7 w-full grow">
         
         {/* Banner with Action Buttons */}
-        <div className="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-white mb-5 sm:mb-6 shadow-md shadow-emerald-950/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 text-white mb-4 sm:mb-6 shadow-md shadow-emerald-950/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <span className="bg-emerald-600/70 text-emerald-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/20">
                 {lang === 'ne' ? 'सजिलो र भरपर्दो' : 'Simple & Easy'}
               </span>
-              <h1 className="text-base sm:text-lg font-bold font-['Mukta',sans-serif]">
+              <h1 className="text-sm sm:text-lg font-bold font-['Mukta',sans-serif]">
                 {lang === 'ne' ? 'आफ्नो दैनिक खर्च नियन्त्रण र बचत ट्र्याकर' : 'Daily Expense Control & Savings Tracker'}
               </h1>
             </div>
-            <p className="text-xs text-emerald-100/90 mt-1 max-w-xl">
+            <p className="text-[11px] sm:text-xs text-emerald-100/90 mt-1 max-w-xl">
               {lang === 'ne'
                 ? 'नगद वा QR जहाँबाट खर्च भएपनि हिसाब राख्नुहोस्, र फोटो ग्यालरीमा रसिद सेभ गर्नुहोस्।'
                 : 'Track daily expenses across Cash, Fonepay QR & eSewa, and save clean receipts directly to your gallery.'}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-emerald-200">
+          <div className="flex items-center gap-2 text-xs text-emerald-200 w-full sm:w-auto">
             <button
               onClick={() => setIsHelpOpen(true)}
-              className="flex items-center gap-1.5 bg-emerald-700/80 hover:bg-emerald-600 px-3 py-1.5 rounded-xl font-bold text-white transition active:scale-95 cursor-pointer border border-emerald-500/30"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-700/80 hover:bg-emerald-600 px-3 py-2 sm:py-1.5 rounded-xl font-bold text-white transition active:scale-95 cursor-pointer border border-emerald-500/30 text-xs"
             >
-              <HelpCircle className="w-3.5 h-3.5" />
+              <HelpCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{lang === 'ne' ? 'कसरी चलाउने?' : 'How it works'}</span>
             </button>
             <button
               onClick={() => setIsSetFundsOpen(true)}
-              className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 px-3 py-1.5 rounded-xl font-bold text-white transition active:scale-95 cursor-pointer border border-emerald-500/40"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 px-3 py-2 sm:py-1.5 rounded-xl font-bold text-white transition active:scale-95 cursor-pointer border border-emerald-500/40 text-xs"
             >
-              <Wallet className="w-3.5 h-3.5" />
+              <Wallet className="w-3.5 h-3.5 shrink-0" />
               <span>{lang === 'ne' ? 'रकम तोक्नुहोस्' : 'Edit Funds'}</span>
             </button>
           </div>
@@ -188,17 +188,17 @@ export default function App() {
         />
 
         {/* 2. Direct Download to Gallery & Excel Bar */}
-        <div className="bg-white border border-emerald-100 rounded-2xl p-4 mb-5 sm:mb-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200/60">
-              <ImageIcon className="w-5 h-5" />
+        <div className="bg-white border border-emerald-100 rounded-2xl p-3.5 sm:p-4 mb-4 sm:mb-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200/60">
+              <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                <span>📸 {lang === 'ne' ? 'फोटो ग्यालरीमा रसिद डाउनलोड गर्नुहोस्' : 'Download Receipt to Gallery'}</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">PNG Image</span>
+            <div className="min-w-0">
+              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5 truncate">
+                <span className="truncate">📸 {lang === 'ne' ? 'फोटो ग्यालरीमा रसिद डाउनलोड गर्नुहोस्' : 'Download Receipt to Gallery'}</span>
+                <span className="text-[9px] sm:text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold shrink-0">PNG</span>
               </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 line-clamp-1 sm:line-clamp-none">
                 {lang === 'ne'
                   ? 'आफ्नो खर्च विवरणलाई मोबाइलको फोटो ग्यालरी (Photos/Downloads) मा सिधै सेभ गर्नुहोस् वा Excel मा डाउनलोड गर्नुहोस्।'
                   : 'Save high-resolution digital expense slip directly to your phone gallery or download Excel spreadsheet.'}
@@ -206,21 +206,21 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               onClick={() => setIsGalleryModalOpen(true)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-700/20 transition active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-700/20 transition active:scale-95 cursor-pointer"
             >
-              <Download className="w-4 h-4" />
-              <span>{lang === 'ne' ? 'ग्यालरीमा सेभ (PNG)' : 'Save to Gallery'}</span>
+              <Download className="w-4 h-4 shrink-0" />
+              <span>{lang === 'ne' ? 'ग्यालरीमा सेभ' : 'Save to Gallery'}</span>
             </button>
 
             <button
               onClick={handleQuickExcel}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-200 transition active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-200 transition active:scale-95 cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-              <span>{lang === 'ne' ? 'Excel (.xlsx)' : 'Export Excel'}</span>
+              <FileSpreadsheet className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>{lang === 'ne' ? 'Excel' : 'Excel'}</span>
             </button>
           </div>
         </div>

@@ -19,16 +19,16 @@ export default function Navbar({ lang, setLang, onOpenGalleryModal, onOpenAdd, o
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-xs">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
         
         {/* Brand Logo & Name */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200 shrink-0">
-            <Wallet className="w-5 h-5" />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200 shrink-0">
+            <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-emerald-950 font-['Mukta',sans-serif]">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="font-extrabold text-base sm:text-xl tracking-tight text-emerald-950 font-['Mukta',sans-serif] truncate">
                 {t.appTitle}
               </span>
               <span className="hidden md:inline-block text-[10px] font-bold tracking-wide bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -42,18 +42,18 @@ export default function Navbar({ lang, setLang, onOpenGalleryModal, onOpenAdd, o
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Nepali BS Date Indicator */}
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50/70 border border-emerald-200 text-xs font-semibold text-emerald-800">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>वि.सं. {getNepaliDateString()}</span>
           </div>
 
-          {/* Quick Help / कसरी चलाउने? */}
+          {/* Quick Help / कसरी चलाउने? (Visible on tablet & desktop, accessible on mobile via banner & settings) */}
           <button
             onClick={onOpenHelp}
             title="कसरी चलाउने? / Quick Guide"
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition cursor-pointer"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition cursor-pointer"
           >
             <HelpCircle className="w-4 h-4 text-emerald-600" />
             <span className="hidden md:inline">{lang === 'ne' ? 'मद्दत' : 'Guide'}</span>
