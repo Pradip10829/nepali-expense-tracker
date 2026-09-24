@@ -1,7 +1,7 @@
 import React from 'react';
-import { Home, ReceiptText, Plus, ScrollText, Settings } from 'lucide-react';
+import { Home, ReceiptText, Plus, Image as ImageIcon, Settings } from 'lucide-react';
 
-export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, lang }) {
+export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, onOpenGallery, lang }) {
   const triggerHaptic = () => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(15);
@@ -41,7 +41,7 @@ export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, la
         }`}
       >
         <ReceiptText className="w-5 h-5" />
-        <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'खर्च सूची' : 'Expenses'}</span>
+        <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'खर्च' : 'List'}</span>
       </button>
 
       {/* 3. Center Quick Add Button (Elevated) */}
@@ -59,19 +59,19 @@ export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, la
         </button>
       </div>
 
-      {/* 4. Handwritten Diary Note */}
+      {/* 4. Download to Gallery */}
       <button
         type="button"
         onClick={() => {
           triggerHaptic();
-          setActiveTab('paper');
+          onOpenGallery();
         }}
         className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition ${
-          activeTab === 'paper' ? 'text-blue-700 font-extrabold' : 'text-slate-400 font-medium'
+          activeTab === 'gallery' ? 'text-emerald-700 font-extrabold' : 'text-slate-400 font-medium'
         }`}
       >
-        <ScrollText className="w-5 h-5" />
-        <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'कापी' : 'Diary'}</span>
+        <ImageIcon className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'ग्यालरी' : 'Gallery'}</span>
       </button>
 
       {/* 5. Settings / Budget */}

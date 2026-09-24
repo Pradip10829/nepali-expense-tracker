@@ -1,8 +1,8 @@
 import React from 'react';
-import { Wallet, Globe, Sparkles, ScrollText, HelpCircle, Settings } from 'lucide-react';
+import { Wallet, Globe, Sparkles, Image as ImageIcon, HelpCircle, Settings } from 'lucide-react';
 import { TRANSLATIONS } from '../data/nepaliData';
 
-export default function Navbar({ lang, setLang, onOpenPaperModal, onOpenAdd, onOpenHelp, onOpenSettings }) {
+export default function Navbar({ lang, setLang, onOpenGalleryModal, onOpenAdd, onOpenHelp, onOpenSettings }) {
   const t = TRANSLATIONS[lang];
 
   // Helper to approximate Nepali BS Year/Month
@@ -59,15 +59,15 @@ export default function Navbar({ lang, setLang, onOpenPaperModal, onOpenAdd, onO
             <span className="hidden md:inline">{lang === 'ne' ? 'मद्दत' : 'Guide'}</span>
           </button>
 
-          {/* A4 School Notebook Paper Trigger */}
+          {/* Download to Gallery Trigger */}
           <button
-            onClick={onOpenPaperModal}
-            title="A4 साइजको स्कुल कापीमा हिसाब (PNG फोटो र Excel डाउनलोड)"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-100/80 border border-blue-200 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+            onClick={onOpenGalleryModal}
+            title="खर्च रसिद फोटो ग्यालरीमा सेभ गर्नुहोस्"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300/80 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <ScrollText className="w-4 h-4 text-blue-700" />
-            <span className="hidden sm:inline">📖 {lang === 'ne' ? 'A4 कापीको पाना' : 'A4 School Copy'}</span>
-            <span className="sm:hidden font-bold">📖 {lang === 'ne' ? 'A4 कापी' : 'A4 Sheet'}</span>
+            <ImageIcon className="w-4 h-4 text-emerald-700" />
+            <span className="hidden sm:inline">📸 {lang === 'ne' ? 'ग्यालरीमा सेभ' : 'Save to Gallery'}</span>
+            <span className="sm:hidden font-bold">📸 {lang === 'ne' ? 'ग्यालरी' : 'Gallery'}</span>
           </button>
 
           {/* Settings Trigger on Desktop */}
@@ -82,10 +82,10 @@ export default function Navbar({ lang, setLang, onOpenPaperModal, onOpenAdd, onO
           {/* Language Toggle */}
           <button
             onClick={() => setLang(lang === 'ne' ? 'en' : 'ne')}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
             title="भाषा बदल्नुहोस् / Switch Language"
           >
-            <Globe className="w-3.5 h-3.5 text-emerald-600" />
+            <Globe className="w-3.5 h-3.5 text-slate-600" />
             <span>{lang === 'ne' ? 'EN' : 'ने'}</span>
           </button>
 
