@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Trash2, Filter, ReceiptText, AlertTriangle } from 'lucide-react';
+import { Search, Trash2, Filter, ReceiptText, AlertTriangle, Calendar, Clock } from 'lucide-react';
 import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, TRANSLATIONS } from '../data/nepaliData';
 import CategoryIcon from './CategoryIcon';
 
@@ -172,9 +172,17 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <span className="text-[11px] font-medium text-slate-400">
-                        {item.date} {item.time && `• ${item.time}`}
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
+                      {/* Date Badge */}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+                        <Calendar className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span>{item.date}</span>
+                      </span>
+
+                      {/* Time Badge */}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                        <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span>{item.time || '12:00 PM'}</span>
                       </span>
 
                       {/* Payment method badge */}

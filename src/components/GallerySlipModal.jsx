@@ -248,21 +248,28 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                     return (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-b-0"
+                        className="flex items-start justify-between text-xs py-2 border-b border-slate-100 last:border-b-0 gap-2"
                       >
-                        <div className="flex items-center gap-2 min-w-0 pr-2">
-                          <span className="text-slate-400 font-bold w-4 text-center">{idx + 1}</span>
+                        <div className="flex items-start gap-2 min-w-0 pr-1">
+                          <span className="text-slate-400 font-bold w-4 text-center shrink-0 mt-0.5">{idx + 1}</span>
                           <div className="min-w-0">
                             <span className="font-bold text-slate-900 truncate block">
                               {item.note}
                             </span>
-                            <span className="text-[10px] text-slate-500">
-                              {cat} • <span className="font-semibold text-emerald-700">{pm}</span>
-                              {isExtra && <span className="ml-1 text-rose-600 font-bold">(अतिरिक्त)</span>}
-                            </span>
+                            {/* Date & Time with Category & Mode */}
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5 flex-wrap">
+                              <span className="font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                {item.date} {item.time ? `• ${item.time}` : ''}
+                              </span>
+                              <span>•</span>
+                              <span>{cat}</span>
+                              <span>•</span>
+                              <span className="font-semibold text-emerald-700">{pm}</span>
+                              {isExtra && <span className="text-rose-600 font-bold">(अतिरिक्त)</span>}
+                            </div>
                           </div>
                         </div>
-                        <span className={`font-black shrink-0 ${isExtra ? 'text-rose-600' : 'text-slate-900'}`}>
+                        <span className={`font-black shrink-0 text-sm mt-0.5 ${isExtra ? 'text-rose-600' : 'text-slate-900'}`}>
                           -{formatNepaliCurrency(item.amount)}
                         </span>
                       </div>

@@ -1,9 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Plus, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { X, Check, Plus, AlertCircle, AlertTriangle, Info, Calendar, Clock } from 'lucide-react';
 import { CATEGORIES, PAYMENT_METHODS, TRANSLATIONS, formatNepaliCurrency } from '../data/nepaliData';
 import CategoryIcon from './CategoryIcon';
 
 const QUICK_AMOUNTS = [25, 50, 100, 250, 500, 1000];
+
+function getNowTime24() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function formatTo12Hr(time24) {
+  if (!time24) {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  if (time24.includes('AM') || time24.includes('PM') || time24.includes('am') || time24.includes('pm')) {
+    return time24;
+  }
+  const parts = time24.split(':');
+  if (parts.length >= 2) {
+    const hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+  }
+  return time24;
+}
 
 export default function AddExpenseModal({ isOpen, onClose, onAddExpense, lang, todayTotal = 0, dailyBudget = 1000 }) {
   const t = TRANSLATIONS[lang];
@@ -14,6 +39,7 @@ export default function AddExpenseModal({ isOpen, onClose, onAddExpense, lang, t
   const [note, setNote] = useState('');
   const [isExtra, setIsExtra] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState(getNowTime24());
   const [error, setError] = useState('');
 
   // Automatically check isExtra if the category selected is 'extra'
@@ -22,6 +48,14 @@ export default function AddExpenseModal({ isOpen, onClose, onAddExpense, lang, t
       setIsExtra(true);
     }
   }, [category]);
+
+  // Keep date & time fresh when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setDate(new Date().toISOString().split('T')[0]);
+      setTime(getNowTime24());
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -37,8 +71,7 @@ export default function AddExpenseModal({ isOpen, onClose, onAddExpense, lang, t
       return;
     }
 
-    const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const formattedTime = formatTo12Hr(time);
 
     onAddExpense({
       id: 'exp-' + Date.now(),
@@ -47,8 +80,8 @@ export default function AddExpenseModal({ isOpen, onClose, onAddExpense, lang, t
       paymentMethod,
       isExtra: isExtra || category === 'extra',
       note: note.trim() || (lang === 'ne' ? 'दैनिक खर्च' : 'Daily Expense'),
-      date,
-      time
+      date: date || new Date().toISOString().split('T')[0],
+      time: formattedTime
     });
 
     // Reset form & close
@@ -253,15 +286,51 @@ export default function AddExpenseModal({ isOpen, onClose, onAddExpense, lang, t
             />
           </div>
 
-          {/* Date Picker (defaults to Today) */}
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-            <span className="font-semibold">{lang === 'ne' ? 'मिति (Date):' : 'Date:'}</span>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none"
-            />
+          {/* Date & Time Picker */}
+          <div className="pt-1 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                {lang === 'ne' ? 'कारोबारको मिति र समय (Date & Time)' : 'Date & Time'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDate(new Date().toISOString().split('T')[0]);
+                  setTime(getNowTime24());
+                }}
+                className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md transition"
+              >
+                {lang === 'ne' ? 'अहिले (Now)' : 'Set to Now'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {/* Date */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                />
+              </div>
+
+              {/* Time */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Submit Button */}
