@@ -117,11 +117,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F8FAF9] flex flex-col font-['Plus_Jakarta_Sans',sans-serif] pb-28 sm:pb-12 text-slate-800">
       
+      {/* Blank Top Section with White and Green Gradient */}
+      <header className="sticky top-0 z-30 w-full h-14 sm:h-16 bg-gradient-to-r from-white via-emerald-100/70 to-emerald-200/80 border-b border-emerald-200/70 shadow-2xs backdrop-blur-sm" />
+
       {/* Mobile Install App Prompt Banner */}
       <InstallPrompt lang={lang} />
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-4 sm:pt-8 w-full grow">
+      <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-3 sm:pt-6 w-full grow">
         
         {/* Top Banner with Action Buttons */}
         <div className="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 text-white mb-4 sm:mb-6 shadow-md shadow-emerald-950/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
