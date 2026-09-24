@@ -1,14 +1,14 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Share2, FileSpreadsheet, Check, Sparkles, Receipt, Calendar, ArrowDownRight, ShieldCheck, Wallet, QrCode, Banknote } from 'lucide-react';
+import { X, Download, FileSpreadsheet, Check, Receipt, Calendar, Clock, Filter, Banknote, QrCode } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { exportToExcel } from '../utils/excelExporter';
 import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency } from '../data/nepaliData';
-import CategoryIcon from './CategoryIcon';
 
 export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney, dailyBudget = 1000, lang }) {
   const receiptRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState('');
+  const [filterLimit, setFilterLimit] = useState('100'); // '100', 'all', 'today', '50', '25'
 
   if (!isOpen) return null;
 
@@ -23,15 +23,27 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
   const approxMonthIndex = (date.getMonth() + 9) % 12;
   const nepaliDateStr = `वि.सं. ${bsYear} ${monthsNe[approxMonthIndex]} ${date.getDate()}, ${daysNe[date.getDay()]}`;
 
-  const totalSpent = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  // Filter expenses according to selected limit
+  let displayedExpenses = [...expenses];
+  if (filterLimit === 'today') {
+    displayedExpenses = displayedExpenses.filter(e => e.date === todayStr);
+  } else if (filterLimit === '25') {
+    displayedExpenses = displayedExpenses.slice(0, 25);
+  } else if (filterLimit === '50') {
+    displayedExpenses = displayedExpenses.slice(0, 50);
+  } else if (filterLimit === '100') {
+    displayedExpenses = displayedExpenses.slice(0, 100);
+  }
+
+  const totalSpent = displayedExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
   const remaining = totalMoney - totalSpent;
 
-  // Accurate Extra Expense Calculation
-  const todayExpenses = expenses.filter(e => e.date === todayStr);
+  // Accurate Extra Expense Calculation for displayed items
+  const todayExpenses = displayedExpenses.filter(e => e.date === todayStr);
   const todayTotal = todayExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
   const todayExtra = Math.max(0, todayTotal - dailyBudget);
 
-  const expensesByDate = expenses.reduce((acc, item) => {
+  const expensesByDate = displayedExpenses.reduce((acc, item) => {
     const d = item.date;
     if (!acc[d]) acc[d] = [];
     acc[d].push(item);
@@ -51,10 +63,10 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
   const exactExtra = todayExtra > 0 ? todayExtra : cumulativeExtra;
 
   // Cash vs Digital breakdown
-  const cashSpent = expenses
+  const cashSpent = displayedExpenses
     .filter(e => e.paymentMethod === 'cash')
     .reduce((sum, item) => sum + Number(item.amount), 0);
-  const digitalSpent = expenses
+  const digitalSpent = displayedExpenses
     .filter(e => e.paymentMethod !== 'cash')
     .reduce((sum, item) => sum + Number(item.amount), 0);
 
@@ -65,22 +77,35 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
     setSavedSuccess('');
 
     try {
-      const dataUrl = await toPng(receiptRef.current, {
-        quality: 0.98,
-        pixelRatio: 2.5, // Ultra-sharp 2.5x resolution for mobile screens and gallery
+      const cardEl = receiptRef.current;
+      const height = cardEl.scrollHeight || cardEl.offsetHeight;
+
+      // Dynamically adjust pixelRatio to prevent exceeding mobile canvas limits (4096px / 8192px)
+      let dynamicPixelRatio = 2.0;
+      if (height > 3500) {
+        dynamicPixelRatio = 1.2;
+      } else if (height > 2000) {
+        dynamicPixelRatio = 1.5;
+      } else if (height > 1000) {
+        dynamicPixelRatio = 1.8;
+      }
+
+      const dataUrl = await toPng(cardEl, {
+        quality: 0.95,
+        pixelRatio: dynamicPixelRatio,
         backgroundColor: '#ffffff',
       });
 
-      // Check if mobile device supports sharing/saving to camera roll
+      // Check if mobile device supports native sharing / save to Photos
       if (navigator.share && navigator.canShare) {
         try {
           const blob = await (await fetch(dataUrl)).blob();
-          const file = new File([blob], `kharcha-slip-${todayStr}.png`, { type: 'image/png' });
+          const file = new File([blob], `kharcha-statement-${todayStr}.png`, { type: 'image/png' });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
-              title: 'मेरो खर्च रसिद',
-              text: 'खर्च-किताबबाट डाउनलोड गरिएको खर्च रसिद',
+              title: 'मेरो खर्च स्टेटमेन्ट',
+              text: `खर्च विवरण रसिद (${displayedExpenses.length} वटा कारोबार)`,
             });
             setIsSaving(false);
             setSavedSuccess(lang === 'ne' ? 'ग्यालरीमा सेभ भयो!' : 'Saved to Gallery!');
@@ -88,13 +113,13 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
             return;
           }
         } catch (shareErr) {
-          // Fallback to direct download
+          // Fallback to standard download
         }
       }
 
-      // Standard direct download to gallery / downloads folder
+      // Standard direct download
       const link = document.createElement('a');
-      link.download = `kharcha-slip-${todayStr}.png`;
+      link.download = `kharcha-statement-${todayStr}.png`;
       link.href = dataUrl;
       link.click();
 
@@ -102,7 +127,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
       setTimeout(() => setSavedSuccess(''), 4000);
     } catch (err) {
       console.error('Failed to save image:', err);
-      alert('फोटो सेभ गर्दा समस्या आयो।');
+      alert(lang === 'ne' ? 'फोटो सेभ गर्दा समस्या आयो। धेरै कारोबार भए Excel मा पनि डाउनलोड गर्न सक्नुहुन्छ।' : 'Failed to save image. Try Excel export for very large lists.');
     } finally {
       setIsSaving(false);
     }
@@ -116,33 +141,33 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto overflow-x-hidden">
       <div 
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 my-auto flex flex-col max-h-[96vh] overflow-hidden"
+        className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 my-auto flex flex-col max-h-[94vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Top Header Controls */}
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+        <div className="p-3 sm:p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
               <Receipt className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">
-                {lang === 'ne' ? 'खर्च रसिद (ग्यालरीमा सेभ)' : 'Expense Receipt'}
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-base font-extrabold text-slate-900 leading-tight truncate">
+                {lang === 'ne' ? 'खर्च रसिद (ग्यालरी डाउनलोड)' : 'Expense Statement Receipt'}
               </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
-                {lang === 'ne' ? 'मोबाइलको फोटो ग्यालरीमा डाउनलोड गर्नुहोस्' : 'Download directly to your photo gallery'}
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
+                {lang === 'ne' ? '१०० वटासम्म कारोबार ग्यालरीमा सेभ गर्न सकिन्छ' : 'Download up to 100 transactions to gallery'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Excel button */}
             <button
               onClick={handleExcelExport}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition"
               title="Excel फाइल"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
@@ -152,67 +177,100 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
             {/* Close */}
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
+        {/* Quick Limit & Filter Selector (100 items, All, Today, 50, 25) */}
+        <div className="bg-slate-100/90 border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 text-slate-600">
+            <Filter className="w-3 h-3 text-emerald-700 shrink-0" />
+            <span className="text-[11px] font-bold">
+              {lang === 'ne' ? 'रसिदमा देखाउने:' : 'Show in Slip:'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {[
+              { id: '100', label: lang === 'ne' ? '१०० वटा' : '100 Items' },
+              { id: 'all', label: lang === 'ne' ? 'सबै' : 'All' },
+              { id: 'today', label: lang === 'ne' ? 'आजको' : 'Today' },
+              { id: '50', label: lang === 'ne' ? '५० वटा' : '50 Items' },
+              { id: '25', label: lang === 'ne' ? '२५ वटा' : '25 Items' },
+            ].map(btn => (
+              <button
+                key={btn.id}
+                type="button"
+                onClick={() => setFilterLimit(btn.id)}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                  filterLimit === btn.id
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Success toast */}
         {savedSuccess && (
-          <div className="bg-emerald-600 text-white text-xs font-bold px-4 py-2 text-center flex items-center justify-center gap-1.5 animate-in fade-in">
+          <div className="bg-emerald-600 text-white text-xs font-bold px-4 py-2 text-center flex items-center justify-center gap-1.5 animate-in fade-in shrink-0">
             <Check className="w-4 h-4 stroke-[3]" />
             <span>{savedSuccess}</span>
           </div>
         )}
 
-        {/* Scrollable Receipt Area */}
-        <div className="p-3 sm:p-5 overflow-y-auto bg-slate-100/70 grow flex justify-center">
+        {/* Scrollable Preview Area (Optimized for Mobile Screens) */}
+        <div className="p-2 sm:p-4 overflow-y-auto overflow-x-hidden bg-slate-100/70 grow flex justify-center">
           
           {/* THE DIGITAL SLIP CARD (Target for PNG download to gallery) */}
           <div
             ref={receiptRef}
-            className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-300 p-5 sm:p-6 select-none text-slate-900"
+            className="w-full max-w-[360px] sm:max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-3.5 sm:p-5 select-none text-slate-900 overflow-hidden"
           >
-            {/* Minimal Transaction Header (Focus on Statement details, not promotional branding) */}
-            <div className="border-b-2 border-slate-900 pb-3 mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-                    <Receipt className="w-5 h-5 text-emerald-700 shrink-0" />
+            {/* Clean Statement Header */}
+            <div className="border-b-2 border-slate-900 pb-2.5 mb-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight flex items-center gap-1.5 truncate">
+                    <Receipt className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>{lang === 'ne' ? 'कारोबार हिसाब स्टेटमेन्ट' : 'Transaction Statement'}</span>
                   </h2>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-medium mt-1">
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-600 font-medium mt-0.5">
                     <span>{nepaliDateStr}</span>
                     <span>•</span>
                     <span>{todayStr}</span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    {lang === 'ne' ? 'कुल कारोबार' : 'Transactions'}
+                <div className="text-right shrink-0">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    {lang === 'ne' ? 'कुल संख्या' : 'Entries'}
                   </span>
-                  <span className="text-sm sm:text-base font-black text-emerald-800">
-                    {expenses.length} {lang === 'ne' ? 'वटा' : 'items'}
+                  <span className="text-xs sm:text-sm font-black text-emerald-800">
+                    {displayedExpenses.length} {lang === 'ne' ? 'वटा' : 'items'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Quick Financial Overview Bar (Compact & Clean) */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-center">
+            {/* Compact Financial Overview Bar */}
+            <div className="grid grid-cols-3 gap-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 mb-3 text-center">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
                   {lang === 'ne' ? 'कुल खर्च' : 'Total Spent'}
                 </span>
                 <span className="text-xs sm:text-sm font-black text-rose-600 block mt-0.5">
                   {formatNepaliCurrency(totalSpent)}
                 </span>
               </div>
-              <div className="border-x border-slate-200">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+              <div className="border-x border-slate-200 px-1">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
                   {lang === 'ne' ? 'बाँकी बचत' : 'Balance'}
                 </span>
                 <span className={`text-xs sm:text-sm font-black block mt-0.5 ${remaining < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
@@ -220,8 +278,8 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                 </span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {lang === 'ne' ? 'अतिरिक्त खर्च' : 'Extra Spent'}
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                  {lang === 'ne' ? 'अतिरिक्त' : 'Extra'}
                 </span>
                 <span className={`text-xs sm:text-sm font-black block mt-0.5 ${exactExtra > 0 ? 'text-rose-600' : 'text-slate-800'}`}>
                   {exactExtra > 0 ? `+${formatNepaliCurrency(exactExtra)}` : 'रु ०'}
@@ -229,27 +287,22 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
               </div>
             </div>
 
-            {/* Itemized Transactions Table (No fixed height - all transactions included cleanly in downloaded image) */}
-            <div className="mb-4">
-              {/* Table Column Titles */}
-              <div className="grid grid-cols-12 text-[11px] font-extrabold uppercase text-slate-500 pb-1.5 border-b border-slate-200 tracking-wider">
-                <div className="col-span-1 text-center">#</div>
-                <div className="col-span-7 pl-1">
-                  {lang === 'ne' ? 'खर्च विवरण / मिति र समय' : 'Description / Date & Time'}
-                </div>
-                <div className="col-span-4 text-right">
-                  {lang === 'ne' ? 'रकम (रु)' : 'Amount (NPR)'}
-                </div>
+            {/* Itemized Transactions Table (Compact, clean 2-line ledger format for 100+ transactions) */}
+            <div className="mb-3">
+              {/* Table Column Title */}
+              <div className="flex items-center justify-between text-[10px] font-extrabold uppercase text-slate-500 pb-1 border-b border-slate-200 tracking-wider">
+                <span>{lang === 'ne' ? 'क्र.सं. / विवरण / मिति र समय' : 'S.N. / Note / Date & Time'}</span>
+                <span>{lang === 'ne' ? 'रकम (Amount)' : 'Amount'}</span>
               </div>
 
-              {/* Transactions Rows */}
-              {expenses.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 italic">
+              {/* Transactions List */}
+              {displayedExpenses.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-400 italic">
                   {lang === 'ne' ? 'कुनै खर्च दर्ता गरिएको छैन।' : 'No transactions recorded.'}
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {expenses.map((item, idx) => {
+                  {displayedExpenses.map((item, idx) => {
                     const cat = CATEGORIES.find(c => c.id === item.category)?.nameNe || item.category;
                     const pm = PAYMENT_METHODS.find(p => p.id === item.paymentMethod)?.nameNe || item.paymentMethod;
                     const isExtra = item.isExtra || item.category === 'extra';
@@ -257,44 +310,41 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                     return (
                       <div
                         key={item.id}
-                        className={`grid grid-cols-12 items-start py-2.5 text-xs ${
-                          isExtra ? 'bg-rose-50/50 -mx-2 px-2 rounded-lg' : ''
+                        className={`py-1.5 px-1 text-xs ${
+                          isExtra ? 'bg-rose-50/60 rounded-lg' : ''
                         }`}
                       >
-                        {/* Serial Number */}
-                        <div className="col-span-1 text-center font-bold text-slate-400 pt-0.5">
-                          {idx + 1}
-                        </div>
-
-                        {/* Note & Metadata */}
-                        <div className="col-span-7 pl-1 pr-2">
-                          <span className="font-bold text-slate-900 leading-snug block">
-                            {item.note}
-                          </span>
-
-                          {/* Date, Time, Category, Payment Mode */}
-                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 mt-1">
-                            <span className="font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/60">
-                              📅 {item.date} {item.time ? `• ⏰ ${item.time}` : ''}
+                        {/* Top Line: S.N. + Note + Amount */}
+                        <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-mono text-[10px] font-bold text-slate-400 w-5 shrink-0">
+                              #{idx + 1}
                             </span>
-                            <span>•</span>
-                            <span className="font-medium text-slate-600">{cat}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/50">
-                              {pm}
+                            <span className="font-bold text-slate-900 truncate text-[11px] sm:text-xs">
+                              {item.note}
                             </span>
                             {isExtra && (
-                              <span className="font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[9px] font-bold text-rose-700 bg-rose-100 px-1 py-0.2 rounded shrink-0">
                                 {lang === 'ne' ? 'अतिरिक्त' : 'Extra'}
                               </span>
                             )}
                           </div>
+
+                          <span className={`font-black text-xs sm:text-sm shrink-0 ${isExtra ? 'text-rose-600' : 'text-slate-900'}`}>
+                            -{formatNepaliCurrency(item.amount)}
+                          </span>
                         </div>
 
-                        {/* Amount */}
-                        <div className="col-span-4 text-right pt-0.5">
-                          <span className={`font-black text-sm block ${isExtra ? 'text-rose-600' : 'text-slate-900'}`}>
-                            -{formatNepaliCurrency(item.amount)}
+                        {/* Bottom Line: Date & Time • Category • Mode */}
+                        <div className="flex items-center gap-1.5 text-[9.5px] sm:text-[10px] text-slate-500 mt-0.5 pl-6.5 flex-wrap">
+                          <span className="font-mono text-slate-600 font-medium">
+                            {item.date} {item.time ? `• ${item.time}` : ''}
+                          </span>
+                          <span>•</span>
+                          <span className="text-slate-600">{cat}</span>
+                          <span>•</span>
+                          <span className="font-semibold text-emerald-800 bg-emerald-50 px-1 rounded border border-emerald-100">
+                            {pm}
                           </span>
                         </div>
                       </div>
@@ -305,23 +355,23 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
             </div>
 
             {/* Bottom Total & Payment Breakdown */}
-            <div className="border-t-2 border-slate-800 pt-3 bg-slate-50/80 -mx-5 sm:-mx-6 -mb-5 sm:-mb-6 p-4 sm:p-5 rounded-b-2xl">
-              <div className="flex items-center justify-between text-xs sm:text-sm font-extrabold pb-2 border-b border-slate-200">
-                <span className="text-slate-700">{lang === 'ne' ? 'कुल खर्च रकम (Grand Total):' : 'Grand Total:'}</span>
-                <span className="text-base sm:text-lg text-rose-600 font-black">{formatNepaliCurrency(totalSpent)}</span>
+            <div className="border-t-2 border-slate-800 pt-2.5 bg-slate-50/80 rounded-xl p-2.5 sm:p-3 mt-1">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-extrabold pb-1.5 border-b border-slate-200">
+                <span className="text-slate-700">{lang === 'ne' ? 'जम्मा कुल खर्च (Total):' : 'Grand Total:'}</span>
+                <span className="text-sm sm:text-base text-rose-600 font-black">{formatNepaliCurrency(totalSpent)}</span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[11px] text-slate-600 pt-2">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] sm:text-[11px] text-slate-600 pt-1.5">
+                <div className="flex items-center gap-2.5">
                   <span className="flex items-center gap-1 font-semibold">
-                    <Banknote className="w-3.5 h-3.5 text-emerald-700" /> नगद: {formatNepaliCurrency(cashSpent)}
+                    <Banknote className="w-3 h-3 text-emerald-700" /> नगद: {formatNepaliCurrency(cashSpent)}
                   </span>
                   <span className="flex items-center gap-1 font-semibold">
-                    <QrCode className="w-3.5 h-3.5 text-teal-700" /> डिजिटल QR: {formatNepaliCurrency(digitalSpent)}
+                    <QrCode className="w-3 h-3 text-teal-700" /> QR: {formatNepaliCurrency(digitalSpent)}
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">
-                  {lang === 'ne' ? 'प्रमाणित स्टेटमेन्ट' : 'Official Record'}
+                <span className="text-[9px] text-slate-400 font-medium">
+                  {lang === 'ne' ? 'प्रमाणित स्टेटमेन्ट' : 'Official Record'} • {todayStr}
                 </span>
               </div>
             </div>
@@ -331,14 +381,18 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
         </div>
 
         {/* Bottom Action Button: Big "Save to Gallery" */}
-        <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+        <div className="p-3 sm:p-4 bg-white border-t border-slate-200 shrink-0">
           <button
             onClick={handleSaveToGallery}
             disabled={isSaving}
-            className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-98 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition cursor-pointer"
+            className="w-full py-3 sm:py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-98 text-white font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition cursor-pointer"
           >
-            <Download className="w-5 h-5" />
-            <span>{isSaving ? 'ग्यालरीमा सेभ हुँदैछ...' : '📸 ग्यालरीमा डाउनलोड गर्नुहोस् (Save to Gallery)'}</span>
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>
+              {isSaving
+                ? (lang === 'ne' ? 'ग्यालरीमा सेभ हुँदैछ...' : 'Saving to Gallery...')
+                : (lang === 'ne' ? `📸 ग्यालरीमा सेभ गर्नुहोस् (${displayedExpenses.length} वटा कारोबार)` : `Save to Gallery (${displayedExpenses.length} transactions)`)}
+            </span>
           </button>
         </div>
 
