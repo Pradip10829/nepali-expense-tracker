@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ReceiptText, Plus, Image as ImageIcon, Settings } from 'lucide-react';
+import { Home, NotebookPen, Plus, ReceiptText, Image as ImageIcon, Settings } from 'lucide-react';
 
 export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, onOpenGallery, lang }) {
   const triggerHaptic = () => {
@@ -19,7 +19,7 @@ export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, on
           setActiveTab('home');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition ${
+        className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition ${
           activeTab === 'home' ? 'text-emerald-700 font-extrabold' : 'text-slate-400 font-medium'
         }`}
       >
@@ -27,21 +27,25 @@ export default function MobileBottomNav({ activeTab, setActiveTab, onOpenAdd, on
         <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'गृह' : 'Home'}</span>
       </button>
 
-      {/* 2. Expenses List */}
+      {/* 2. Note / नोट (Smart Scratchpad) */}
       <button
         type="button"
         onClick={() => {
           triggerHaptic();
-          setActiveTab('expenses');
-          const el = document.getElementById('expense-list-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
+          setActiveTab('note');
+          const el = document.getElementById('note-section');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+            const textarea = el.querySelector('textarea');
+            if (textarea) textarea.focus();
+          }
         }}
-        className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition ${
-          activeTab === 'expenses' ? 'text-emerald-700 font-extrabold' : 'text-slate-400 font-medium'
+        className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition ${
+          activeTab === 'note' ? 'text-amber-700 font-extrabold' : 'text-slate-400 font-medium'
         }`}
       >
-        <ReceiptText className="w-5 h-5" />
-        <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'खर्च' : 'List'}</span>
+        <NotebookPen className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{lang === 'ne' ? 'नोट' : 'Note'}</span>
       </button>
 
       {/* 3. Center Quick Add Button (Elevated) */}

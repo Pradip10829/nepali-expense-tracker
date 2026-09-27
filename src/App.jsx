@@ -12,6 +12,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import InstallPrompt from './components/InstallPrompt';
 import QuickGuideModal from './components/QuickGuideModal';
 import SettingsModal from './components/SettingsModal';
+import SmartNote from './components/SmartNote';
 import { exportToExcel } from './utils/excelExporter';
 import { TRANSLATIONS } from './data/nepaliData';
 
@@ -78,9 +79,15 @@ export default function App() {
     .filter(e => e.date === todayStr)
     .reduce((sum, item) => sum + Number(item.amount), 0);
 
-  // Add new expense
+  // Add new single expense
   const handleAddExpense = (newExp) => {
     setExpenses(prev => [newExp, ...prev]);
+  };
+
+  // Add multiple batch expenses (from Smart Note)
+  const handleAddBatchExpenses = (newExpenses) => {
+    if (!Array.isArray(newExpenses) || newExpenses.length === 0) return;
+    setExpenses(prev => [...newExpenses, ...prev]);
   };
 
   // Delete single expense
@@ -107,7 +114,10 @@ export default function App() {
   // Handle Mobile Bottom Nav tab changes
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'gallery') {
+    if (tab === 'note') {
+      const el = document.getElementById('note-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else if (tab === 'gallery') {
       setIsGalleryModalOpen(true);
     } else if (tab === 'settings') {
       setIsSettingsOpen(true);
@@ -235,7 +245,13 @@ export default function App() {
           <CategoryBreakdown expenses={expenses} lang={lang} />
         </div>
 
-        {/* 4. Transaction Log with Live Search, Extra Filter & Add */}
+        {/* 4. Smart Note (Auto-parse "milk 50 dahi 50" to expenses) */}
+        <SmartNote
+          onAddBatchExpenses={handleAddBatchExpenses}
+          lang={lang}
+        />
+
+        {/* 5. Transaction Log with Live Search, Extra Filter & Add */}
         <div id="expense-list-section">
           <ExpenseList
             expenses={expenses}
