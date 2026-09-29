@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ShieldCheck, Smartphone, Laptop, Wallet, FileSpreadsheet, Image as ImageIcon, HelpCircle, Settings, Download } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, Smartphone, Laptop, Wallet, FileSpreadsheet, Image as ImageIcon, HelpCircle, Settings, Download, User, Edit3, Coins, TrendingUp } from 'lucide-react';
 import StatsCards from './components/StatsCards';
 import ExpenseReminderBanner from './components/ExpenseReminderBanner';
 import BudgetBar from './components/BudgetBar';
@@ -13,6 +13,8 @@ import InstallPrompt from './components/InstallPrompt';
 import QuickGuideModal from './components/QuickGuideModal';
 import SettingsModal from './components/SettingsModal';
 import SmartNote from './components/SmartNote';
+import UserNameModal from './components/UserNameModal';
+import AddExtraMoneyModal from './components/AddExtraMoneyModal';
 import { exportToExcel } from './utils/excelExporter';
 import { TRANSLATIONS } from './data/nepaliData';
 
@@ -64,9 +66,24 @@ export default function App() {
     return saved ? Number(saved) : 1000;
   });
 
+  // User Name Preference
+  const [userName, setUserName] = useState(() => {
+    return localStorage.getItem('kharcha_user_name') || '';
+  });
+
+  // Extra Money Logs (Income, Bonus, etc.)
+  const [extraMoneyLogs, setExtraMoneyLogs] = useState(() => {
+    const saved = localStorage.getItem('kharcha_extra_money_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const totalExtraMoneyAdded = extraMoneyLogs.reduce((sum, item) => sum + Number(item.amount), 0);
+
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSetFundsOpen, setIsSetFundsOpen] = useState(false);
+  const [isAddExtraMoneyOpen, setIsAddExtraMoneyOpen] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -78,6 +95,38 @@ export default function App() {
   const todayTotal = expenses
     .filter(e => e.date === todayStr)
     .reduce((sum, item) => sum + Number(item.amount), 0);
+
+  // Save User Name
+  const handleSaveName = (name) => {
+    setUserName(name);
+    localStorage.setItem('kharcha_user_name', name);
+  };
+
+  // Add Extra Money (Increases total funds + adds log)
+  const handleAddExtraMoney = (entry) => {
+    const updatedTotal = totalMoney + entry.amount;
+    setTotalMoney(updatedTotal);
+    localStorage.setItem('kharcha_total_money', updatedTotal.toString());
+
+    const updatedLogs = [entry, ...extraMoneyLogs];
+    setExtraMoneyLogs(updatedLogs);
+    localStorage.setItem('kharcha_extra_money_logs', JSON.stringify(updatedLogs));
+
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(20);
+    }
+  };
+
+  // Delete an Extra Money log entry (deducts from total funds)
+  const handleDeleteExtraMoneyLog = (id, amount) => {
+    const updatedLogs = extraMoneyLogs.filter(item => item.id !== id);
+    setExtraMoneyLogs(updatedLogs);
+    localStorage.setItem('kharcha_extra_money_logs', JSON.stringify(updatedLogs));
+
+    const updatedTotal = Math.max(0, totalMoney - amount);
+    setTotalMoney(updatedTotal);
+    localStorage.setItem('kharcha_total_money', updatedTotal.toString());
+  };
 
   // Add new single expense
   const handleAddExpense = (newExp) => {
@@ -108,7 +157,7 @@ export default function App() {
 
   // Direct Excel Export shortcut
   const handleQuickExcel = () => {
-    exportToExcel({ expenses, totalMoney, dailyBudget, lang });
+    exportToExcel({ expenses, totalMoney, dailyBudget, userName, lang });
   };
 
   // Handle Mobile Bottom Nav tab changes
@@ -139,14 +188,30 @@ export default function App() {
         {/* Top Banner with Action Buttons */}
         <div className="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 text-white mb-4 sm:mb-6 shadow-md shadow-emerald-950/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsNameModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-xs font-bold text-white transition active:scale-95 cursor-pointer backdrop-blur-xs shadow-2xs"
+                title={lang === 'ne' ? 'आफ्नो नाम बदल्नुहोस्' : 'Change Name'}
+              >
+                <User className="w-3.5 h-3.5 text-emerald-300" />
+                <span>
+                  {userName 
+                    ? (lang === 'ne' ? `नमस्ते, ${userName}!` : `Hello, ${userName}!`) 
+                    : (lang === 'ne' ? '👤 आफ्नो नाम लेख्नुहोस्' : '👤 Set Your Name')}
+                </span>
+                <Edit3 className="w-3 h-3 text-emerald-200 ml-0.5 opacity-80" />
+              </button>
+
               <span className="bg-emerald-600/70 text-emerald-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/20">
                 {lang === 'ne' ? 'सजिलो र भरपर्दो' : 'Simple & Easy'}
               </span>
-              <h1 className="text-sm sm:text-lg font-bold font-['Mukta',sans-serif]">
-                {lang === 'ne' ? 'आफ्नो दैनिक खर्च नियन्त्रण र बचत ट्र्याकर' : 'Daily Expense Control & Savings Tracker'}
-              </h1>
             </div>
+
+            <h1 className="text-sm sm:text-lg font-bold font-['Mukta',sans-serif]">
+              {lang === 'ne' ? 'आफ्नो दैनिक खर्च नियन्त्रण र बचत ट्र्याकर' : 'Daily Expense Control & Savings Tracker'}
+            </h1>
             <p className="text-[11px] sm:text-xs text-emerald-100/90 mt-1 max-w-xl">
               {lang === 'ne'
                 ? 'नगद वा QR जहाँबाट खर्च भएपनि हिसाब राख्नुहोस्, र फोटो ग्यालरीमा रसिद सेभ गर्नुहोस्।'
@@ -154,13 +219,21 @@ export default function App() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-emerald-200 w-full sm:w-auto">
+          <div className="flex items-center gap-2 text-xs text-emerald-200 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             <button
               onClick={() => setLang(lang === 'ne' ? 'en' : 'ne')}
               className="px-2.5 py-2 sm:py-1.5 rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white transition border border-white/20 text-xs shrink-0 cursor-pointer active:scale-95"
               title="Change Language"
             >
               🌐 {lang === 'ne' ? 'EN' : 'नेपाली'}
+            </button>
+            <button
+              onClick={() => setIsAddExtraMoneyOpen(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 px-3 py-2 sm:py-1.5 rounded-xl font-bold text-white transition active:scale-95 cursor-pointer border border-emerald-400/40 text-xs shadow-xs"
+              title={lang === 'ne' ? 'थप रकम / आम्दानी थप्नुहोस्' : 'Add Extra Money'}
+            >
+              <Coins className="w-3.5 h-3.5 shrink-0" />
+              <span>{lang === 'ne' ? '+ थप रकम' : '+ Extra Money'}</span>
             </button>
             <button
               onClick={() => setIsHelpOpen(true)}
@@ -193,6 +266,8 @@ export default function App() {
           totalMoney={totalMoney}
           dailyBudget={dailyBudget}
           onOpenSetFunds={() => setIsSetFundsOpen(true)}
+          onOpenAddExtraMoney={() => setIsAddExtraMoneyOpen(true)}
+          totalExtraMoneyAdded={totalExtraMoneyAdded}
           lang={lang}
         />
 
@@ -341,6 +416,7 @@ export default function App() {
         expenses={expenses}
         totalMoney={totalMoney}
         dailyBudget={dailyBudget}
+        userName={userName}
         lang={lang}
       />
 
@@ -364,9 +440,31 @@ export default function App() {
         setDailyBudget={setDailyBudget}
         expenses={expenses}
         setExpenses={setExpenses}
+        userName={userName}
+        onOpenNameModal={() => setIsNameModalOpen(true)}
         onClearAll={handleClearAll}
         lang={lang}
         setLang={setLang}
+      />
+
+      {/* User Name Modal */}
+      <UserNameModal
+        isOpen={isNameModalOpen}
+        onClose={() => setIsNameModalOpen(false)}
+        currentName={userName}
+        onSaveName={handleSaveName}
+        lang={lang}
+      />
+
+      {/* Add Extra Money Modal */}
+      <AddExtraMoneyModal
+        isOpen={isAddExtraMoneyOpen}
+        onClose={() => setIsAddExtraMoneyOpen(false)}
+        totalMoney={totalMoney}
+        onAddExtraMoney={handleAddExtraMoney}
+        extraMoneyLogs={extraMoneyLogs}
+        onDeleteExtraMoneyLog={handleDeleteExtraMoneyLog}
+        lang={lang}
       />
 
     </div>

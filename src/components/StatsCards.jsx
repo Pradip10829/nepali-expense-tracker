@@ -13,7 +13,15 @@ import {
 } from 'lucide-react';
 import { formatNepaliCurrency, TRANSLATIONS } from '../data/nepaliData';
 
-export default function StatsCards({ expenses, totalMoney, dailyBudget = 1000, onOpenSetFunds, lang }) {
+export default function StatsCards({ 
+  expenses, 
+  totalMoney, 
+  dailyBudget = 1000, 
+  onOpenSetFunds, 
+  onOpenAddExtraMoney,
+  totalExtraMoneyAdded = 0,
+  lang 
+}) {
   const t = TRANSLATIONS[lang];
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -97,19 +105,40 @@ export default function StatsCards({ expenses, totalMoney, dailyBudget = 1000, o
                 {t.totalMoney}
               </span>
             </div>
-            <button
-              onClick={onOpenSetFunds}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 bg-white/20 hover:bg-white/30 active:scale-95 text-white rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer backdrop-blur-xs shrink-0"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline sm:inline">{lang === 'ne' ? 'रकम तोक्नुहोस्' : 'Set Funds'}</span>
-              <span className="xs:hidden sm:hidden">{lang === 'ne' ? '+ रकम' : '+ Funds'}</span>
-            </button>
+
+            {/* Action buttons: + Extra Money & Set Funds */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={onOpenAddExtraMoney}
+                className="flex items-center gap-1 px-2.5 sm:px-3 py-1 bg-emerald-500/90 hover:bg-emerald-400 active:scale-95 text-white rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer border border-emerald-300/40 shadow-xs"
+                title={lang === 'ne' ? '+ थप रकम / आम्दानी थप्नुहोस्' : '+ Add Extra Money / Income'}
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>{lang === 'ne' ? '+ थप रकम' : '+ Extra'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenSetFunds}
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1 bg-white/20 hover:bg-white/30 active:scale-95 text-white rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer backdrop-blur-xs"
+                title={lang === 'ne' ? 'कुल रकम बदल्नुहोस्' : 'Configure Funds'}
+              >
+                <span>{lang === 'ne' ? 'तोक्नुहोस्' : 'Set'}</span>
+              </button>
+            </div>
           </div>
 
           <div className="my-2.5 sm:my-3">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight break-words font-['Mukta',sans-serif]">
-              {formatNepaliCurrency(totalMoney)}
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight break-words font-['Mukta',sans-serif]">
+                {formatNepaliCurrency(totalMoney)}
+              </div>
+              {totalExtraMoneyAdded > 0 && (
+                <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">
+                  +{formatNepaliCurrency(totalExtraMoneyAdded)} {lang === 'ne' ? 'थपिएको' : 'extra added'}
+                </span>
+              )}
             </div>
             <p className="text-[11px] sm:text-xs text-emerald-100/80 mt-0.5">
               {lang === 'ne' ? 'तपाईंको कुल उपलब्ध बजेट वा आम्दानी' : 'Total available budget or salary'}

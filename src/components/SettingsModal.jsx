@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, Settings, ShieldCheck, Download, Upload, Trash2, Wallet, Target, Globe } from 'lucide-react';
+import { X, Settings, ShieldCheck, Download, Upload, Trash2, Wallet, Target, Globe, User } from 'lucide-react';
 import { formatNepaliCurrency } from '../data/nepaliData';
 
 export default function SettingsModal({
@@ -11,6 +11,8 @@ export default function SettingsModal({
   setDailyBudget,
   expenses,
   setExpenses,
+  userName = '',
+  onOpenNameModal,
   onClearAll,
   lang,
   setLang
@@ -91,6 +93,33 @@ export default function SettingsModal({
 
         <div className="space-y-4 text-xs">
           
+          {/* User Name Setting */}
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                <User className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-slate-900 block">
+                  {lang === 'ne' ? 'तपाईंको नाम (Your Name)' : 'Your Name'}
+                </span>
+                <span className="text-[11px] text-slate-500 font-semibold">
+                  {userName || (lang === 'ne' ? 'नाम राखिएको छैन' : 'Not set')}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onOpenNameModal) onOpenNameModal();
+              }}
+              className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg transition cursor-pointer"
+            >
+              {lang === 'ne' ? 'बदल्नुहोस्' : 'Edit'}
+            </button>
+          </div>
+
           {/* Total Funds Quick Access */}
           <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
             <div className="flex items-center gap-2.5">

@@ -4,7 +4,7 @@ import { toPng } from 'html-to-image';
 import { exportToExcel } from '../utils/excelExporter';
 import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency } from '../data/nepaliData';
 
-export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney, dailyBudget = 1000, lang }) {
+export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney, dailyBudget = 1000, userName = '', lang }) {
   const receiptRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState('');
@@ -137,7 +137,7 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
 
   // Excel export
   const handleExcelExport = () => {
-    exportToExcel({ expenses, totalMoney, dailyBudget, lang });
+    exportToExcel({ expenses, totalMoney, dailyBudget, userName, lang });
     setSavedSuccess(lang === 'ne' ? 'एक्सेल फाइल डाउनलोड भयो!' : 'Excel file downloaded!');
     setTimeout(() => setSavedSuccess(''), 4000);
   };
@@ -245,10 +245,18 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
                     <Receipt className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>{lang === 'ne' ? 'कारोबार हिसाब स्टेटमेन्ट' : 'Transaction Statement'}</span>
                   </h2>
-                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-600 font-medium mt-0.5">
+                  <div className="flex items-center gap-1.5 flex-wrap text-[10px] sm:text-[11px] text-slate-600 font-medium mt-0.5">
                     <span>{nepaliDateStr}</span>
                     <span>•</span>
                     <span>{todayStr}</span>
+                    {userName && (
+                      <>
+                        <span>•</span>
+                        <span className="font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                          👤 {userName}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 

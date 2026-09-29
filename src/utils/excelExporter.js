@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { CATEGORIES, PAYMENT_METHODS } from '../data/nepaliData';
 
-export function exportToExcel({ expenses, totalMoney, dailyBudget = 1000, lang = 'ne' }) {
+export function exportToExcel({ expenses, totalMoney, dailyBudget = 1000, userName = '', lang = 'ne' }) {
   if (!expenses || expenses.length === 0) {
     alert(lang === 'ne' ? 'डाउनलोड गर्न कुनै खर्च फेला परेन।' : 'No expenses recorded to export.');
     return;
@@ -74,6 +74,7 @@ export function exportToExcel({ expenses, totalMoney, dailyBudget = 1000, lang =
 
   // 2. Summary Sheet
   const summaryData = [
+    ...(userName ? [{ 'शीर्षक (Metric)': 'हिसाबधनी / प्रयोगकर्ता (Account Holder)', 'रकम रु (NPR)': userName }] : []),
     { 'शीर्षक (Metric)': 'कुल जम्मा बजेट / रकम (Total Funds)', 'रकम रु (NPR)': totalMoney },
     { 'शीर्षक (Metric)': 'दैनिक बजेट सीमा (Daily Budget Limit)', 'रकम रु (NPR)': dailyBudget },
     { 'शीर्षक (Metric)': 'कुल खर्च रकम (Total Spent)', 'रकम रु (NPR)': totalSpent },
