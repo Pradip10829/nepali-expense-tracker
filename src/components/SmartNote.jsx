@@ -8,12 +8,20 @@ import {
   Zap, 
   CornerDownLeft, 
   Clock, 
+  Calendar,
   Tag, 
   Check, 
   HelpCircle,
   X
 } from 'lucide-react';
-import { formatNepaliCurrency, CATEGORIES, PAYMENT_METHODS } from '../data/nepaliData';
+import { formatNepaliCurrency, CATEGORIES, PAYMENT_METHODS, formatTime24To12, formatReadableDate } from '../data/nepaliData';
+
+function getNowTime24() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
 
 // Map of keywords to auto-detect categories
 const CATEGORY_KEYWORDS = {
@@ -66,37 +74,75 @@ function detectCategory(title = '') {
   return 'other';
 }
 
-// Convert Nepali Devanagari numerals to standard numbers
-function parseNepaliNumber(str) {
+// Detect if user wrote a date directly in the note text, e.g. "26 sep milk 50" or "2026-09-26 milk 50"
+const MONTH_NAME_MAP = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12
+};
+
+export function extractInlineDateAndCleanText(rawText) {
+  if (!rawText) return { detectedDate: null, cleanedText: '' };
   const nepaliDigits = { '०': '0', '१': '1', '२': '2', '३': '3', '४': '4', '५': '5', '६': '6', '७': '7', '८': '8', '९': '9' };
-  const normalized = str.replace(/[०-९]/g, d => nepaliDigits[d] || d);
-  const num = parseFloat(normalized);
-  return isNaN(num) ? 0 : num;
+  let text = rawText.replace(/[०-९]/g, d => nepaliDigits[d] || d);
+  let detectedDate = null;
+  const currentYear = new Date().getFullYear();
+
+  // 1. Check YYYY-MM-DD (e.g. 2026-09-26)
+  const isoMatch = text.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  if (isoMatch) {
+    const yyyy = isoMatch[1];
+    const mm = String(isoMatch[2]).padStart(2, '0');
+    const dd = String(isoMatch[3]).padStart(2, '0');
+    detectedDate = `${yyyy}-${mm}-${dd}`;
+    text = text.replace(isoMatch[0], ' ');
+  } else {
+    // 2. Check "26 sep", "26 september", "sep 26", "september 26"
+    const dmyMatch = text.match(/\b(\d{1,2})\s*(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s+(\d{4}))?\b/i);
+    const mdyMatch = text.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s+(\d{4}))?\b/i);
+
+    if (dmyMatch) {
+      const day = parseInt(dmyMatch[1], 10);
+      const monthNum = MONTH_NAME_MAP[dmyMatch[2].toLowerCase()];
+      const year = dmyMatch[3] ? parseInt(dmyMatch[3], 10) : currentYear;
+      if (day >= 1 && day <= 31 && monthNum) {
+        detectedDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        text = text.replace(dmyMatch[0], ' ');
+      }
+    } else if (mdyMatch) {
+      const monthNum = MONTH_NAME_MAP[mdyMatch[1].toLowerCase()];
+      const day = parseInt(mdyMatch[2], 10);
+      const year = mdyMatch[3] ? parseInt(mdyMatch[3], 10) : currentYear;
+      if (day >= 1 && day <= 31 && monthNum) {
+        detectedDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        text = text.replace(mdyMatch[0], ' ');
+      }
+    }
+  }
+
+  return { detectedDate, cleanedText: text };
 }
 
 // Smart Parser: Extracts items and amounts from text
-// Examples supported:
-// - "milk 50 dahi 50"
-// - "milk 50\ndahi 50"
-// - "milk 50, dahi 50, sugar 100"
-// - "दूध ५० दही ५०"
-// - "50 milk 50 dahi"
 export function parseNoteToExpenses(rawText) {
   if (!rawText || !rawText.trim()) return [];
 
-  // 1. Convert Nepali digits to standard digits
-  const nepaliDigits = { '०': '0', '१': '1', '२': '2', '३': '3', '४': '4', '५': '5', '६': '6', '७': '7', '८': '8', '९': '9' };
-  let normalized = rawText.replace(/[०-९]/g, d => nepaliDigits[d] || d);
+  const { cleanedText } = extractInlineDateAndCleanText(rawText);
 
-  // 2. Remove currency symbols like Rs, Rs., रु, रू, etc.
-  normalized = normalized.replace(/रु\.?|Rs\.?|रू/gi, ' ');
+  // Remove currency symbols like Rs, Rs., रु, रू, etc.
+  let normalized = cleanedText.replace(/रु\.?|Rs\.?|रू/gi, ' ');
 
   const items = [];
-  
-  // Strategy: parse line by line or split by commas/semicolons
   const lines = normalized.split(/[\n,;]+/);
-  
-  // Regex to match "item_name amount"
   const regexWordNum = /([a-zA-Z\u0900-\u097F\s\/\-_.]+?)\s+(\d+(?:\.\d+)?)/g;
 
   for (const line of lines) {
@@ -122,7 +168,6 @@ export function parseNoteToExpenses(rawText) {
     if (lineMatches.length > 0) {
       items.push(...lineMatches);
     } else {
-      // Check if number was written first: e.g. "50 milk" or "50 for milk"
       const numFirst = trimmed.match(/^(\d+(?:\.\d+)?)\s+(?:for\s+|ko\s+|को\s+)?([a-zA-Z\u0900-\u097F\s\/\-_.]+)$/);
       if (numFirst) {
         const amount = parseFloat(numFirst[1]);
@@ -147,14 +192,22 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
   });
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedTime, setSelectedTime] = useState(() => getNowTime24());
   const [autoAddOnEnter, setAutoAddOnEnter] = useState(true);
   const [recentAddedMessage, setRecentAddedMessage] = useState(null);
   const textareaRef = useRef(null);
+
+  const todayStr = new Date().toISOString().split('T')[0];
 
   // Save draft locally
   useEffect(() => {
     localStorage.setItem('kharcha_smart_note_draft', noteText);
   }, [noteText]);
+
+  // Check if user typed a date inside the note (e.g. "26 sep milk 50")
+  const { detectedDate } = extractInlineDateAndCleanText(noteText);
+  const effectiveDate = detectedDate || selectedDate || todayStr;
+  const isPastDate = effectiveDate !== todayStr;
 
   // Real-time parsed items
   const parsedItems = parseNoteToExpenses(noteText);
@@ -172,9 +225,8 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
   const handleAutoAdd = () => {
     if (parsedItems.length === 0) return;
 
-    const now = new Date();
-    const dateToUse = selectedDate || now.toISOString().split('T')[0];
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateToUse = effectiveDate;
+    const timeStr = formatTime24To12(selectedTime);
 
     const newExpenseObjects = parsedItems.map((item, idx) => ({
       id: `exp-note-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 4)}`,
@@ -187,7 +239,7 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
       time: timeStr
     }));
 
-    // Trigger batch add in parent
+    // Trigger batch add in parent (sorted strictly into chronological queue by Date & Time)
     onAddBatchExpenses(newExpenseObjects);
 
     // Provide feedback
@@ -196,20 +248,21 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
     }
 
     const itemsSummary = parsedItems.map(i => `${i.title} (रु ${i.amount})`).join(', ');
+    const readableDate = formatReadableDate(dateToUse, lang);
     setRecentAddedMessage(
       lang === 'ne'
-        ? `✅ ${parsedItems.length} वटा खर्च थपियो (${dateToUse}): ${itemsSummary}`
-        : `✅ ${parsedItems.length} expenses added (${dateToUse}): ${itemsSummary}`
+        ? `✅ ${parsedItems.length} वटा खर्च [${readableDate}, ${timeStr}] को लाइनमा (Queue) राखियो: ${itemsSummary}`
+        : `✅ ${parsedItems.length} expenses queued at [${readableDate}, ${timeStr}] in history: ${itemsSummary}`
     );
 
     // Clear note text
     setNoteText('');
     localStorage.removeItem('kharcha_smart_note_draft');
 
-    // Hide message after 5 seconds
+    // Hide message after 6 seconds
     setTimeout(() => {
       setRecentAddedMessage(null);
-    }, 5000);
+    }, 6000);
   };
 
   // Handle Enter key for quick submit
@@ -231,13 +284,13 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500" />
 
       {/* Header of Note Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-amber-200/60">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 pb-3 border-b border-amber-200/60">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 text-amber-900 border border-amber-300/80 flex items-center justify-center shrink-0 shadow-2xs">
             <NotebookPen className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base sm:text-lg font-black text-amber-950 font-['Mukta',sans-serif] tracking-tight">
                 Note <span className="text-xs font-bold text-amber-800">/ नोट</span>
               </h3>
@@ -245,24 +298,58 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
                 <Zap className="w-3 h-3 text-amber-700" />
                 <span>{lang === 'ne' ? 'स्वत: हिसाब' : 'Auto-Add'}</span>
               </span>
+              {isPastDate && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                  📅 {lang === 'ne' ? `पुरानो मिति: ${formatReadableDate(effectiveDate, lang)}` : `Backdated Queue: ${formatReadableDate(effectiveDate, lang)}`}
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-amber-900/80 font-medium">
               {lang === 'ne' 
-                ? 'जस्तै: "milk 50 dahi 50" लेख्नुहोस्, तुरुन्तै हिसाब जोडिएर खर्चमा थपिनेछ।' 
-                : 'e.g. Type "milk 50 dahi 50" or line by line to automatically record expenses.'}
+                ? 'जस्तै: "milk 50 dahi 50" वा पुरानो छुटेको भए "26 sep milk 50" लेख्नुहोस् — सिधै त्यही मितिको ठाउँमा बस्नेछ।' 
+                : 'e.g. Type "milk 50 dahi 50" or "26 sep milk 50" — past expenses go directly to their date & time position.'}
             </p>
           </div>
         </div>
 
-        {/* Date & Payment mode selector */}
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-2 py-1 bg-white border border-amber-300 rounded-xl text-[11px] font-bold text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
-            title={lang === 'ne' ? 'खर्च मिति' : 'Expense Date'}
-          />
+        {/* Date, Time & Payment mode selector */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 self-start lg:self-center">
+          {/* Date Picker */}
+          <div className="flex items-center gap-1 bg-white border border-amber-300 rounded-xl px-2 py-1">
+            <Calendar className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-transparent text-[11px] font-bold text-amber-950 focus:outline-none cursor-pointer"
+              title={lang === 'ne' ? 'खर्च मिति (पुरानो छुटेको मिति छान्न मिल्छ)' : 'Expense Date (Pick past date if forgotten)'}
+            />
+          </div>
+
+          {/* Time Picker */}
+          <div className="flex items-center gap-1 bg-white border border-amber-300 rounded-xl px-2 py-1">
+            <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <input
+              type="time"
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              className="bg-transparent text-[11px] font-bold text-amber-950 focus:outline-none cursor-pointer"
+              title={lang === 'ne' ? 'खर्च समय' : 'Expense Time'}
+            />
+          </div>
+
+          {isPastDate && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedDate(todayStr);
+                setSelectedTime(getNowTime24());
+              }}
+              className="px-2 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[10px] font-extrabold border border-emerald-300 transition cursor-pointer"
+            >
+              {lang === 'ne' ? 'आज (Today)' : 'Reset Today'}
+            </button>
+          )}
 
           <div className="flex items-center bg-amber-100/70 p-1 rounded-xl border border-amber-200 gap-1 text-xs">
             <button

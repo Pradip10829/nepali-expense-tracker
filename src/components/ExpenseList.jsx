@@ -12,9 +12,21 @@ import {
   ChevronDown, 
   ChevronUp,
   Banknote,
-  QrCode
+  QrCode,
+  Edit3,
+  Check,
+  X
 } from 'lucide-react';
-import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, TRANSLATIONS, sortExpensesByDateTime } from '../data/nepaliData';
+import { 
+  CATEGORIES, 
+  PAYMENT_METHODS, 
+  formatNepaliCurrency, 
+  TRANSLATIONS, 
+  sortExpensesByDateTime, 
+  formatReadableDate, 
+  time12To24, 
+  formatTime24To12 
+} from '../data/nepaliData';
 import CategoryIcon from './CategoryIcon';
 
 // Helper to get YYYY-MM for N months ago
@@ -43,7 +55,7 @@ function formatYearMonthLabel(ym, lang = 'ne') {
   return lang === 'ne' ? `${monthsNe[idx]} ${year}` : `${monthsEn[idx]} ${year}`;
 }
 
-export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
+export default function ExpenseList({ expenses, onDeleteExpense, onUpdateExpenseDateTime, lang }) {
   const t = TRANSLATIONS[lang];
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -51,9 +63,12 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
   const [onlyExtra, setOnlyExtra] = useState(false);
   const [showAllRows, setShowAllRows] = useState(false);
 
+  // Inline Date & Time editor state for moving any item to its exact past date/time queue
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
+
   // Time / Month Filter State
-  // Options: 'all', 'today', '0m' (this month), '1m' (1 month ago), '2m' (2 months ago), 
-  // '3m' (3 months ago), '6m' (6 months ago), '12m' (1 year ago month), 'last_year' (full year), or 'custom'
   const [timeFilter, setTimeFilter] = useState('all');
   const [customMonth, setCustomMonth] = useState(''); // 'YYYY-MM'
   const [showMonthlyArchive, setShowMonthlyArchive] = useState(false);
@@ -159,6 +174,38 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
     { id: '6m', labelNe: '६ महिना अघि (6M Ago)', labelEn: '6 Months Ago' },
     { id: '12m', labelNe: '१ वर्ष अघि (1Y Ago)', labelEn: '1 Year Ago' },
   ];
+
+  // Group filteredExpenses by Date so each day forms a clear chronological queue in History
+  const groupedByDate = useMemo(() => {
+    const map = new Map();
+    filteredExpenses.forEach(item => {
+      const d = item.date || todayStr;
+      if (!map.has(d)) {
+        map.set(d, {
+          date: d,
+          total: 0,
+          items: []
+        });
+      }
+      const group = map.get(d);
+      group.items.push(item);
+      group.total += Number(item.amount) || 0;
+    });
+    return Array.from(map.values());
+  }, [filteredExpenses, todayStr]);
+
+  const startEditingDateTime = (item) => {
+    setEditingItemId(item.id);
+    setEditDate(item.date || todayStr);
+    setEditTime(time12To24(item.time || '12:00 PM'));
+  };
+
+  const saveEditedDateTime = (id) => {
+    if (onUpdateExpenseDateTime && editDate) {
+      onUpdateExpenseDateTime(id, editDate, formatTime24To12(editTime));
+    }
+    setEditingItemId(null);
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-emerald-100 shadow-xs overflow-hidden">
@@ -420,8 +467,8 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
         </div>
       </div>
 
-      {/* Transactions List */}
-      <div className={`divide-y divide-slate-100 ${showAllRows ? 'max-h-none' : 'max-h-[600px]'} overflow-y-auto`}>
+      {/* Transactions List Grouped by Date Queue & Ordered by Time */}
+      <div className={`${showAllRows ? 'max-h-none' : 'max-h-[650px]'} overflow-y-auto`}>
         {filteredExpenses.length === 0 ? (
           <div className="p-8 text-center">
             <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
@@ -448,84 +495,162 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
             )}
           </div>
         ) : (
-          filteredExpenses.map((item) => {
-            const cat = getCategoryDetails(item.category);
-            const pm = getPaymentDetails(item.paymentMethod);
-            const isItemExtra = item.isExtra || item.category === 'extra';
+          groupedByDate.map((dateGroup) => {
+            const isTodayGroup = dateGroup.date === todayStr;
 
             return (
-              <div
-                key={item.id}
-                className={`p-3.5 sm:p-4 hover:bg-emerald-50/30 transition flex items-center justify-between gap-3 group ${
-                  isItemExtra ? 'bg-rose-50/20' : ''
-                }`}
-              >
-                {/* Left: Category Icon & Details */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`p-2.5 rounded-xl border shrink-0 ${cat.color}`}>
-                    <CategoryIcon iconName={cat.icon} className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div key={dateGroup.date} className="border-b border-slate-100 last:border-b-0">
+                {/* Date Queue Section Header */}
+                <div className={`px-4 py-2 flex items-center justify-between text-xs font-bold border-b ${
+                  isTodayGroup
+                    ? 'bg-emerald-50/90 text-emerald-950 border-emerald-100'
+                    : 'bg-slate-50/95 text-slate-700 border-slate-100'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <Calendar className={`w-3.5 h-3.5 ${isTodayGroup ? 'text-emerald-700' : 'text-slate-500'}`} />
+                    <span>{formatReadableDate(dateGroup.date, lang)}</span>
+                    <span className="text-[10px] font-semibold text-slate-400">({dateGroup.date})</span>
                   </div>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-xs sm:text-sm text-slate-900 truncate">
-                        {item.note}
-                      </p>
-                      {isItemExtra && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-0.5 shrink-0">
-                          <AlertTriangle className="w-2.5 h-2.5" />
-                          {lang === 'ne' ? 'अतिरिक्त' : 'Extra'}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
-                      {/* Date Badge */}
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
-                        <Calendar className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>{item.date}</span>
-                      </span>
-
-                      {/* Time Badge */}
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                        <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>{item.time || '12:00 PM'}</span>
-                      </span>
-
-                      {/* Payment method badge */}
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${pm.badge}`}>
-                        {lang === 'ne' ? pm.nameNe : pm.nameEn}
-                      </span>
-
-                      {/* Category tag */}
-                      <span className="hidden sm:inline-block text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                        {lang === 'ne' ? cat.nameNe : cat.nameEn}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-white border border-slate-200 text-slate-600">
+                      {dateGroup.items.length} {lang === 'ne' ? 'वटा' : 'items'}
+                    </span>
+                    <span className="font-extrabold text-emerald-800 font-['Mukta',sans-serif]">
+                      {formatNepaliCurrency(dateGroup.total)}
+                    </span>
                   </div>
                 </div>
 
-                {/* Right: Amount & Delete Button */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                  <div className="text-right">
-                    <span className={`font-extrabold text-sm sm:text-base ${
-                      isItemExtra ? 'text-rose-600' : 'text-slate-900'
-                    }`}>
-                      -{formatNepaliCurrency(item.amount)}
-                    </span>
-                  </div>
+                {/* Items within this Date Queue (Ordered by Time) */}
+                <div className="divide-y divide-slate-100">
+                  {dateGroup.items.map((item) => {
+                    const cat = getCategoryDetails(item.category);
+                    const pm = getPaymentDetails(item.paymentMethod);
+                    const isItemExtra = item.isExtra || item.category === 'extra';
+                    const isEditingThis = editingItemId === item.id;
 
-                  <button
-                    onClick={() => {
-                      if (window.confirm(t.deleteConfirm)) {
-                        onDeleteExpense(item.id);
-                      }
-                    }}
-                    title="हटाउनुहोस् / Delete"
-                    className="p-2 sm:p-1.5 rounded-lg text-slate-400 sm:text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-90 transition cursor-pointer opacity-100 sm:opacity-70 sm:group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3.5 sm:p-4 hover:bg-emerald-50/30 transition flex flex-col gap-2.5 group ${
+                          isItemExtra ? 'bg-rose-50/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Left: Category Icon & Details */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`p-2.5 rounded-xl border shrink-0 ${cat.color}`}>
+                              <CategoryIcon iconName={cat.icon} className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                                  {item.note}
+                                </p>
+                                {isItemExtra && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-0.5 shrink-0">
+                                    <AlertTriangle className="w-2.5 h-2.5" />
+                                    {lang === 'ne' ? 'अतिरिक्त' : 'Extra'}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
+                                {/* Clickable Date & Time Badge to adjust queue position if needed */}
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingDateTime(item)}
+                                  title={lang === 'ne' ? 'मिति र समय बदल्न क्लिक गर्नुहोस्' : 'Click to change Date & Time'}
+                                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-100/80 hover:text-emerald-950 px-2 py-0.5 rounded-md border border-slate-200/80 transition cursor-pointer"
+                                >
+                                  <Calendar className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  <span>{item.date}</span>
+                                  <span className="text-slate-300">|</span>
+                                  <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  <span className="font-bold text-emerald-950">{item.time || '12:00 PM'}</span>
+                                  <Edit3 className="w-2.5 h-2.5 text-slate-400 ml-0.5" />
+                                </button>
+
+                                {/* Payment method badge */}
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${pm.badge}`}>
+                                  {lang === 'ne' ? pm.nameNe : pm.nameEn}
+                                </span>
+
+                                {/* Category tag */}
+                                <span className="hidden sm:inline-block text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                  {lang === 'ne' ? cat.nameNe : cat.nameEn}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right: Amount & Delete Button */}
+                          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                            <div className="text-right">
+                              <span className={`font-extrabold text-sm sm:text-base ${
+                                isItemExtra ? 'text-rose-600' : 'text-slate-900'
+                              }`}>
+                                -{formatNepaliCurrency(item.amount)}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                if (window.confirm(t.deleteConfirm)) {
+                                  onDeleteExpense(item.id);
+                                }
+                              }}
+                              title="हटाउनुहोस् / Delete"
+                              className="p-2 sm:p-1.5 rounded-lg text-slate-400 sm:text-slate-300 hover:text-rose-600 hover:bg-rose-50 active:scale-90 transition cursor-pointer opacity-100 sm:opacity-70 sm:group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Inline Date & Time Editor (moves item directly to its exact past date/time queue) */}
+                        {isEditingThis && (
+                          <div className="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 flex flex-wrap items-center justify-between gap-2 animate-in fade-in duration-150">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-bold text-emerald-950">
+                                {lang === 'ne' ? '📅 मिति र समय सच्याउनुहोस्:' : '📅 Move to Date & Time:'}
+                              </span>
+                              <input
+                                type="date"
+                                value={editDate}
+                                onChange={(e) => setEditDate(e.target.value)}
+                                className="px-2 py-1 bg-white border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                              />
+                              <input
+                                type="time"
+                                value={editTime}
+                                onChange={(e) => setEditTime(e.target.value)}
+                                className="px-2 py-1 bg-white border border-emerald-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => saveEditedDateTime(item.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>{lang === 'ne' ? 'सेभ (Save)' : 'Save'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingItemId(null)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold transition cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

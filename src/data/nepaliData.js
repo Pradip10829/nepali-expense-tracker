@@ -133,11 +133,12 @@ export function formatNepaliCurrency(amount) {
 // Clean start: ZERO example/dummy expenses as requested by user - ONLY user added data
 export const INITIAL_EXPENSES = [];
 
-// Convert time string ("02:30 PM" or "14:30") into minutes since midnight (0 - 1439) for exact chronological sorting
+// Convert time string ("02:30 PM", "2:30\u202FPM", "14:30") into minutes since midnight (0 - 1439) for exact chronological sorting
 export function timeToMinutes(timeStr) {
   if (!timeStr) return 0;
-  const clean = timeStr.toString().trim().toUpperCase();
-  const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
+  // Normalize any special unicode spaces and trim
+  const clean = timeStr.toString().replace(/[\u202F\u00A0]/g, ' ').trim().toUpperCase();
+  const match = clean.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/);
   if (!match) return 0;
   let hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
@@ -149,21 +150,79 @@ export function timeToMinutes(timeStr) {
   return hours * 60 + minutes;
 }
 
+// Convert 12h time ("02:30 PM") to 24h ("14:30") for <input type="time" />
+export function time12To24(timeStr) {
+  if (!timeStr) return '12:00';
+  const totalMins = timeToMinutes(timeStr);
+  const h = String(Math.floor(totalMins / 60)).padStart(2, '0');
+  const m = String(totalMins % 60).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+// Convert 24h time ("14:30") to 12h ("02:30 PM")
+export function formatTime24To12(time24) {
+  if (!time24) {
+    return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).replace(/[\u202F\u00A0]/g, ' ');
+  }
+  if (time24.toUpperCase().includes('AM') || time24.toUpperCase().includes('PM')) {
+    return time24.replace(/[\u202F\u00A0]/g, ' ').trim();
+  }
+  const parts = time24.split(':');
+  if (parts.length >= 2) {
+    const hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+  }
+  return time24;
+}
+
+// Format YYYY-MM-DD into a human-friendly label like "26 September 2026"
+export function formatReadableDate(dateStr, lang = 'ne') {
+  if (!dateStr || !dateStr.includes('-')) return dateStr || '';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (!y || !m || !d) return dateStr;
+
+  const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'September', 'Oct', 'Nov', 'Dec'];
+  const monthsFullEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthsNe = ['जनवरी', 'फेब्रुअरी', 'मार्च', 'अप्रिल', 'मे', 'जुन', 'जुलाई', 'अगस्ट', 'सेप्टेम्बर', 'अक्टोबर', 'नोभेम्बर', 'डिसेम्बर'];
+
+  const idx = (m - 1) % 12;
+  const baseLabel = lang === 'ne'
+    ? `${d} ${monthsNe[idx]} ${y}`
+    : `${d} ${monthsFullEn[idx]} ${y}`;
+
+  if (dateStr === todayStr) {
+    return lang === 'ne' ? `आज (${baseLabel})` : `Today (${baseLabel})`;
+  }
+  if (dateStr === yesterdayStr) {
+    return lang === 'ne' ? `हिजो (${baseLabel})` : `Yesterday (${baseLabel})`;
+  }
+  return baseLabel;
+}
+
 // Sort expenses strictly by Date (Newest Date first) and Time (Newest Time within that Date first)
-// So if today is Sep 30 and user adds a forgotten expense for Sep 26, it automatically goes to Sep 26's exact chronological position!
+// So if today is Sep 30 and user adds a forgotten expense for Sep 26, it automatically goes to Sep 26's exact chronological position in history, never at the top!
 export function sortExpensesByDateTime(expenses = []) {
   if (!Array.isArray(expenses)) return [];
   return [...expenses].sort((a, b) => {
-    const dateA = a.date || '';
-    const dateB = b.date || '';
+    const dateA = (a.date || '').trim();
+    const dateB = (b.date || '').trim();
     if (dateA !== dateB) {
       return dateB.localeCompare(dateA); // Newer date first (e.g. 2026-09-30 before 2026-09-26)
     }
     const minA = timeToMinutes(a.time);
     const minB = timeToMinutes(b.time);
     if (minA !== minB) {
-      return minB - minA; // Later time in the day first
+      return minB - minA; // Later time in that day first
     }
     return 0;
   });
 }
+

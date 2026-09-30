@@ -145,6 +145,18 @@ export default function App() {
     setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
+  // Update an expense's date & time and automatically re-sort into its chronological queue position
+  const handleUpdateExpenseDateTime = (id, newDate, newTime) => {
+    setExpenses(prev => {
+      const updated = prev.map(item =>
+        item.id === id
+          ? { ...item, date: newDate || item.date, time: newTime || item.time }
+          : item
+      );
+      return sortExpensesByDateTime(updated);
+    });
+  };
+
   // Clear all data
   const handleClearAll = () => {
     const msg = lang === 'ne'
@@ -332,6 +344,7 @@ export default function App() {
           <ExpenseList
             expenses={expenses}
             onDeleteExpense={handleDeleteExpense}
+            onUpdateExpenseDateTime={handleUpdateExpenseDateTime}
             lang={lang}
           />
         </div>
