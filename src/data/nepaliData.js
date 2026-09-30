@@ -133,4 +133,37 @@ export function formatNepaliCurrency(amount) {
 // Clean start: ZERO example/dummy expenses as requested by user - ONLY user added data
 export const INITIAL_EXPENSES = [];
 
+// Convert time string ("02:30 PM" or "14:30") into minutes since midnight (0 - 1439) for exact chronological sorting
+export function timeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const clean = timeStr.toString().trim().toUpperCase();
+  const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
+  if (!match) return 0;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const period = match[3];
 
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
+// Sort expenses strictly by Date (Newest Date first) and Time (Newest Time within that Date first)
+// So if today is Sep 30 and user adds a forgotten expense for Sep 26, it automatically goes to Sep 26's exact chronological position!
+export function sortExpensesByDateTime(expenses = []) {
+  if (!Array.isArray(expenses)) return [];
+  return [...expenses].sort((a, b) => {
+    const dateA = a.date || '';
+    const dateB = b.date || '';
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA); // Newer date first (e.g. 2026-09-30 before 2026-09-26)
+    }
+    const minA = timeToMinutes(a.time);
+    const minB = timeToMinutes(b.time);
+    if (minA !== minB) {
+      return minB - minA; // Later time in the day first
+    }
+    return 0;
+  });
+}

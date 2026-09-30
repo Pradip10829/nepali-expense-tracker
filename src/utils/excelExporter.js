@@ -1,11 +1,13 @@
 import * as XLSX from 'xlsx';
-import { CATEGORIES, PAYMENT_METHODS } from '../data/nepaliData';
+import { CATEGORIES, PAYMENT_METHODS, sortExpensesByDateTime } from '../data/nepaliData';
 
-export function exportToExcel({ expenses, totalMoney, dailyBudget = 1000, userName = '', lang = 'ne' }) {
-  if (!expenses || expenses.length === 0) {
+export function exportToExcel({ expenses: rawExpenses, totalMoney, dailyBudget = 1000, userName = '', lang = 'ne' }) {
+  if (!rawExpenses || rawExpenses.length === 0) {
     alert(lang === 'ne' ? 'डाउनलोड गर्न कुनै खर्च फेला परेन।' : 'No expenses recorded to export.');
     return;
   }
+
+  const expenses = sortExpensesByDateTime(rawExpenses);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const totalSpent = expenses.reduce((sum, item) => sum + Number(item.amount), 0);

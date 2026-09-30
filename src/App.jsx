@@ -16,7 +16,7 @@ import SmartNote from './components/SmartNote';
 import UserNameModal from './components/UserNameModal';
 import AddExtraMoneyModal from './components/AddExtraMoneyModal';
 import { exportToExcel } from './utils/excelExporter';
-import { TRANSLATIONS } from './data/nepaliData';
+import { TRANSLATIONS, sortExpensesByDateTime } from './data/nepaliData';
 
 export default function App() {
   // Mobile active tab ('home', 'expenses', 'gallery', 'settings')
@@ -31,13 +31,14 @@ export default function App() {
     localStorage.setItem('kharcha_lang', lang);
   }, [lang]);
 
-  // Load Expenses: Completely empty clean slate (no demo items)
+  // Load Expenses: Completely empty clean slate (no demo items), sorted by Date & Time
   const [expenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('kharcha_expenses');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.filter(item => !item.id || !item.id.toString().startsWith('demo-'));
+        const userItems = parsed.filter(item => !item.id || !item.id.toString().startsWith('demo-'));
+        return sortExpensesByDateTime(userItems);
       } catch (e) {
         console.error('Failed to parse saved expenses:', e);
       }
@@ -128,15 +129,15 @@ export default function App() {
     localStorage.setItem('kharcha_total_money', updatedTotal.toString());
   };
 
-  // Add new single expense
+  // Add new single expense (placed in exact chronological order by Date & Time)
   const handleAddExpense = (newExp) => {
-    setExpenses(prev => [newExp, ...prev]);
+    setExpenses(prev => sortExpensesByDateTime([newExp, ...prev]));
   };
 
-  // Add multiple batch expenses (from Smart Note)
+  // Add multiple batch expenses (from Smart Note, sorted chronologically by Date & Time)
   const handleAddBatchExpenses = (newExpenses) => {
     if (!Array.isArray(newExpenses) || newExpenses.length === 0) return;
-    setExpenses(prev => [...newExpenses, ...prev]);
+    setExpenses(prev => sortExpensesByDateTime([...newExpenses, ...prev]));
   };
 
   // Delete single expense

@@ -14,7 +14,7 @@ import {
   Banknote,
   QrCode
 } from 'lucide-react';
-import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, TRANSLATIONS } from '../data/nepaliData';
+import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, TRANSLATIONS, sortExpensesByDateTime } from '../data/nepaliData';
 import CategoryIcon from './CategoryIcon';
 
 // Helper to get YYYY-MM for N months ago
@@ -101,8 +101,8 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
     return null;
   }, [timeFilter, customMonth]);
 
-  // Filter transactions
-  const filteredExpenses = expenses.filter(item => {
+  // Filter transactions and sort strictly by Date & Time (Newest first)
+  const filteredExpenses = sortExpensesByDateTime(expenses.filter(item => {
     // 1. Time / Month match
     let matchesTime = true;
     if (timeFilter === 'today') {
@@ -130,7 +130,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, lang }) {
     const matchesExtra = !onlyExtra || (item.isExtra || item.category === 'extra');
 
     return matchesTime && matchesSearch && matchesCategory && matchesMethod && matchesExtra;
-  });
+  }));
 
   // Calculate stats for currently filtered expenses
   const filteredTotalAmount = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);

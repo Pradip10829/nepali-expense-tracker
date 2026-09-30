@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { X, Download, FileSpreadsheet, Check, Receipt, Calendar, Clock, Filter, Banknote, QrCode } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { exportToExcel } from '../utils/excelExporter';
-import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency } from '../data/nepaliData';
+import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency, sortExpensesByDateTime } from '../data/nepaliData';
 
 // Helper to get YYYY-MM for N months ago
 function getYearMonthOffset(monthsAgo) {
@@ -43,12 +43,14 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
   else if (filterLimit === '12m') targetYearMonth = getYearMonthOffset(12);
   else if (filterLimit === 'custom') targetYearMonth = customMonth;
 
-  // Show strictly what the user added matching the selected filter
-  const displayedExpenses = filterLimit === 'today'
+  // Show strictly what the user added matching the selected filter, sorted by Date & Time
+  const rawDisplayed = filterLimit === 'today'
     ? expenses.filter(e => e.date === todayStr)
     : targetYearMonth
     ? expenses.filter(e => e.date && e.date.startsWith(targetYearMonth))
     : [...expenses];
+
+  const displayedExpenses = sortExpensesByDateTime(rawDisplayed);
 
   const totalSpent = displayedExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
   const remaining = totalMoney - totalSpent;
