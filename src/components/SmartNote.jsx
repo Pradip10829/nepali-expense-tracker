@@ -146,6 +146,7 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
     return localStorage.getItem('kharcha_smart_note_draft') || '';
   });
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [autoAddOnEnter, setAutoAddOnEnter] = useState(true);
   const [recentAddedMessage, setRecentAddedMessage] = useState(null);
   const textareaRef = useRef(null);
@@ -172,7 +173,7 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
     if (parsedItems.length === 0) return;
 
     const now = new Date();
-    const todayDateStr = now.toISOString().split('T')[0];
+    const dateToUse = selectedDate || now.toISOString().split('T')[0];
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
     const newExpenseObjects = parsedItems.map((item, idx) => ({
@@ -182,7 +183,7 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
       paymentMethod,
       isExtra: item.category === 'extra',
       note: item.title,
-      date: todayDateStr,
+      date: dateToUse,
       time: timeStr
     }));
 
@@ -197,8 +198,8 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
     const itemsSummary = parsedItems.map(i => `${i.title} (रु ${i.amount})`).join(', ');
     setRecentAddedMessage(
       lang === 'ne'
-        ? `✅ ${parsedItems.length} वटा खर्च थपियो: ${itemsSummary}`
-        : `✅ ${parsedItems.length} expenses added: ${itemsSummary}`
+        ? `✅ ${parsedItems.length} वटा खर्च थपियो (${dateToUse}): ${itemsSummary}`
+        : `✅ ${parsedItems.length} expenses added (${dateToUse}): ${itemsSummary}`
     );
 
     // Clear note text
@@ -253,11 +254,16 @@ export default function SmartNote({ onAddBatchExpenses, lang }) {
           </div>
         </div>
 
-        {/* Payment mode selector */}
-        <div className="flex items-center gap-1.5 self-start sm:self-center">
-          <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider hidden sm:inline">
-            {lang === 'ne' ? 'माध्यम:' : 'Mode:'}
-          </span>
+        {/* Date & Payment mode selector */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-2 py-1 bg-white border border-amber-300 rounded-xl text-[11px] font-bold text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+            title={lang === 'ne' ? 'खर्च मिति' : 'Expense Date'}
+          />
+
           <div className="flex items-center bg-amber-100/70 p-1 rounded-xl border border-amber-200 gap-1 text-xs">
             <button
               type="button"

@@ -4,11 +4,22 @@ import { toPng } from 'html-to-image';
 import { exportToExcel } from '../utils/excelExporter';
 import { CATEGORIES, PAYMENT_METHODS, formatNepaliCurrency } from '../data/nepaliData';
 
+// Helper to get YYYY-MM for N months ago
+function getYearMonthOffset(monthsAgo) {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - monthsAgo);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}`;
+}
+
 export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney, dailyBudget = 1000, userName = '', lang }) {
   const receiptRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState('');
-  const [filterLimit, setFilterLimit] = useState('all'); // 'all', 'today'
+  const [filterLimit, setFilterLimit] = useState('all'); // 'all', 'today', '0m', '1m', '2m', '3m', '12m', 'custom'
+  const [customMonth, setCustomMonth] = useState('');
 
   if (!isOpen) return null;
 
@@ -23,9 +34,20 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
   const approxMonthIndex = (date.getMonth() + 9) % 12;
   const nepaliDateStr = `वि.सं. ${bsYear} ${monthsNe[approxMonthIndex]} ${date.getDate()}, ${daysNe[date.getDay()]}`;
 
-  // Show strictly what the user added
+  // Determine target month if month filter is active
+  let targetYearMonth = null;
+  if (filterLimit === '0m') targetYearMonth = getYearMonthOffset(0);
+  else if (filterLimit === '1m') targetYearMonth = getYearMonthOffset(1);
+  else if (filterLimit === '2m') targetYearMonth = getYearMonthOffset(2);
+  else if (filterLimit === '3m') targetYearMonth = getYearMonthOffset(3);
+  else if (filterLimit === '12m') targetYearMonth = getYearMonthOffset(12);
+  else if (filterLimit === 'custom') targetYearMonth = customMonth;
+
+  // Show strictly what the user added matching the selected filter
   const displayedExpenses = filterLimit === 'today'
     ? expenses.filter(e => e.date === todayStr)
+    : targetYearMonth
+    ? expenses.filter(e => e.date && e.date.startsWith(targetYearMonth))
     : [...expenses];
 
   const totalSpent = displayedExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
@@ -186,38 +208,50 @@ export default function GallerySlipModal({ isOpen, onClose, expenses, totalMoney
           </div>
         </div>
 
-        {/* Filter Selector (All or Today only) */}
-        <div className="bg-slate-100/90 border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0">
-          <div className="flex items-center gap-1.5 shrink-0 text-slate-600">
-            <Filter className="w-3 h-3 text-emerald-700 shrink-0" />
-            <span className="text-[11px] font-bold">
-              {lang === 'ne' ? 'रसिदमा देखाउने:' : 'Show in Slip:'}
-            </span>
-          </div>
-
+        {/* Filter Selector (All, Today, Months Ago, or Custom Month) */}
+        <div className="bg-slate-100/90 border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar shrink-0">
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => setFilterLimit('all')}
-              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                filterLimit === 'all'
-                  ? 'bg-emerald-600 text-white shadow-2xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {lang === 'ne' ? `सबै (${expenses.length})` : `All (${expenses.length})`}
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterLimit('today')}
-              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                filterLimit === 'today'
-                  ? 'bg-emerald-600 text-white shadow-2xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {lang === 'ne' ? 'आजको मात्र' : 'Today'}
-            </button>
+            {[
+              { id: 'all', labelNe: `सबै (${expenses.length})`, labelEn: `All (${expenses.length})` },
+              { id: 'today', labelNe: 'आज', labelEn: 'Today' },
+              { id: '0m', labelNe: 'यो महिना', labelEn: 'This Month' },
+              { id: '1m', labelNe: '१ महिना अघि', labelEn: '1M Ago' },
+              { id: '2m', labelNe: '२ महिना अघि', labelEn: '2M Ago' },
+              { id: '3m', labelNe: '३ महिना अघि', labelEn: '3M Ago' },
+              { id: '12m', labelNe: '१ वर्ष अघि', labelEn: '1Y Ago' },
+            ].map(btn => (
+              <button
+                key={btn.id}
+                type="button"
+                onClick={() => {
+                  setFilterLimit(btn.id);
+                  setCustomMonth('');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer shrink-0 ${
+                  filterLimit === btn.id
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {lang === 'ne' ? btn.labelNe : btn.labelEn}
+              </button>
+            ))}
+
+            <input
+              type="month"
+              value={targetYearMonth || ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setCustomMonth(e.target.value);
+                  setFilterLimit('custom');
+                } else {
+                  setFilterLimit('all');
+                  setCustomMonth('');
+                }
+              }}
+              className="px-2 py-0.5 bg-white border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 cursor-pointer shrink-0"
+              title={lang === 'ne' ? 'महिना छान्नुहोस्' : 'Pick Month'}
+            />
           </div>
         </div>
 
